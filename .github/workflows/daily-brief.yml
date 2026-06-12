@@ -1,0 +1,72 @@
+# .github/workflows/daily-brief.yml
+#
+# MoneyTailors Daily Market Brief — runs every day at 12:00 UTC
+#
+# Required secrets (Settings > Secrets > Actions):
+#   ANTHROPIC_API_KEY   — Anthropic API key
+#   BREVO_API_KEY       — Brevo SMTP API key (optional, skip if absent)
+#   BREVO_LIST_ID       — Brevo list ID for subscribers (optional)
+#
+# GITHUB_TOKEN is automatically provided by GitHub Actions.
+
+name: Daily Market Brief
+
+on:
+  schedule:
+    # Daily at 12:00 UTC (15:00 Riyadh, 17:00 PKT, 08:00 New York)
+    - cron: '0 12 * * *'
+
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (preview only, no commit, no email)'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Generate & Publish Daily Brief
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --quiet anthropic requests
+
+      - name: Run daily brief agent
+        env:
+          GITHUB_TOKEN:      ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO:       ${{ github.repository }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BREVO_API_KEY:     ${{ secrets.BREVO_API_KEY }}
+          BREVO_LIST_ID:     ${{ secrets.BREVO_LIST_ID }}
+          SITE_URL:          'https://www.moneytailors.com'
+          DRY_RUN:           ${{ github.event.inputs.dry_run || 'false' }}
+        run: python scripts/daily_brief_agent.py
+
+      - name: Run summary
+        if: always()
+        run: |
+          echo "## Daily Brief Run" >> $GITHUB_STEP_SUMMARY
+          echo "- Repo: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Time: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "- Trigger: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Dry run: ${{ github.event.inputs.dry_run || 'false' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Cloudflare Pages auto-deploys on commit." >> $GITHUB_STEP_SUMMARY
