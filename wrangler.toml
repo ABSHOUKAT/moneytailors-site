@@ -1,0 +1,5 @@
+name = "moneytailors-v2"
+compatibility_date = "2026-06-12"
+
+[assets]
+directory = "./"
