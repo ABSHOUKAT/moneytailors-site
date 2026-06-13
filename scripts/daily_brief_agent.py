@@ -51,36 +51,38 @@ BUCKETS = {
     'macro':       ['fed','federal reserve','inflation','recession','GDP','interest rate','central bank','jobs','employment','CPI','PMI'],
 }
 
-# ─── Step 1: Fetch news headlines ────────────────────────────────────────────
-RSS_FEEDS = [
-    ('BBC Business',     'https://feeds.bbci.co.uk/news/business/rss.xml'),
-    ('BBC World',        'https://feeds.bbci.co.uk/news/world/rss.xml'),
-    ('Arabian Business', 'https://www.arabianbusiness.com/rss'),
-    ('Reuters Markets',  'https://feeds.reuters.com/reuters/businessNews'),
-]
+# ─── Step 1: Fetch news headlines via Marketaux ─────────────────────────────
+MARKETAUX_KEY = 'HgY1A0J8SrEJEtsoneEtatoydKqQI7RR5gseJZHo'
 
 def fetch_all_headlines():
-    """Fetch all headlines from RSS feeds. Returns list of {title, link, source, pubdate}."""
+    """Fetch financial headlines from Marketaux API (no IP restrictions, reliable)."""
     all_items = []
-    for source, feed_url in RSS_FEEDS:
-        try:
-            api_url = f'https://api.rss2json.com/v1/api.json?rss_url={requests.utils.quote(feed_url)}&count=25'
-            resp = requests.get(api_url, timeout=15)
-            if resp.status_code != 200:
-                continue
+    try:
+        params = {
+            'language': 'en',
+            'filter_entities': 'true',
+            'limit': '50',
+            'api_token': MARKETAUX_KEY
+        }
+        resp = requests.get('https://api.marketaux.com/v1/news/all', params=params, timeout=15)
+        if resp.status_code == 200:
             data = resp.json()
-            if data.get('status') != 'ok':
-                continue
-            for item in data.get('items', [])[:20]:
+            for item in data.get('data', []):
+                if not item.get('title') or not item.get('url'):
+                    continue
+                import re as _re
+                src = _re.sub(r'\.(com|net|org|co|io).*$', '', item.get('source', 'News'), flags=_re.I)
                 all_items.append({
-                    'title':   (item.get('title') or '').strip(),
-                    'link':    item.get('link', ''),
-                    'source':  source,
-                    'pubdate': item.get('pubDate', ''),
-                    'snippet': (item.get('description') or '')[:300],
+                    'title':   item['title'].strip(),
+                    'link':    item['url'],
+                    'source':  src or 'News',
+                    'pubdate': item.get('published_at', ''),
+                    'snippet': (item.get('description') or item.get('snippet') or '')[:300],
                 })
-        except Exception as e:
-            print(f'RSS error ({source}): {e}')
+        else:
+            print(f'Marketaux error {resp.status_code}: {resp.text[:200]}')
+    except Exception as e:
+        print(f'Marketaux fetch error: {e}')
     print(f'Total headlines fetched: {len(all_items)}')
     return all_items
 
