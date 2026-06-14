@@ -1,15 +1,3 @@
-# .github/workflows/daily-brief.yml
-#
-# Required secrets (Settings > Secrets > Actions):
-#   ANTHROPIC_API_KEY      — Anthropic API key
-#   BREVO_API_KEY          — Brevo API key
-#   BREVO_LIST_ID          — Brevo list ID (3)
-#   CLOUDFLARE_API_TOKEN   — Cloudflare API token
-#   CLOUDFLARE_ACCOUNT_ID  — Cloudflare account ID
-#   CLOUDFLARE_PROJECT     — mt-live
-#
-# GITHUB_TOKEN is automatically provided by GitHub Actions.
-
 name: Daily Market Brief
 
 on:
@@ -62,18 +50,19 @@ jobs:
       - name: Redeploy to Cloudflare
         if: ${{ github.event.inputs.dry_run != 'true' }}
         env:
-          CF_TOKEN:   ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_PROJECT: ${{ secrets.CLOUDFLARE_PROJECT }}
         run: |
-          npm install -g wrangler --silent 2>/dev/null
-          cat > /tmp/w.toml << TOML
+          echo "Deploying updated site to Cloudflare..."
+          cat > /tmp/wrangler.toml << TOML
           name = "${CF_PROJECT}"
-          compatibility_date = "2026-06-12"
+          compatibility_date = "2026-06-14"
           [assets]
-          directory = "./"
+          directory = "/home/runner/work/moneytailors-site/moneytailors-site"
           TOML
-          CLOUDFLARE_API_TOKEN=$CF_TOKEN npx wrangler deploy --config /tmp/w.toml
+          cd /home/runner/work/moneytailors-site/moneytailors-site
+          npx --yes wrangler@latest deploy --config /tmp/wrangler.toml
+          echo "Redeploy complete."
 
       - name: Run summary
         if: always()
