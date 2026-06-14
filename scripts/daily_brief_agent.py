@@ -320,62 +320,66 @@ def publish_to_site(html_content, title, excerpt, category, img_bytes, slug):
 # ─── Step 7: Send via Brevo ─────────────────────────────────────────────────
 def send_newsletter_via_brevo(title, html_content, slug, excerpt):
     if not BREVO_KEY or not BREVO_LIST_ID:
-        print('Brevo not configured (BREVO_API_KEY or BREVO_LIST_ID missing) — skipping email send')
+        print('Brevo not configured — skipping email send')
         return False
     if DRY_RUN:
         print('DRY RUN — skipping Brevo send')
         return True
 
     post_url = f'{SITE_URL}/post.html?slug={slug}'
+    today_str = datetime.now(timezone.utc).strftime('%A, %d %B %Y')
 
-    # Wrap the content in a basic responsive email template
-    email_html = f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><title>{html.escape(title)}</title></head>
-<body style="margin:0;padding:0;background:#f5f5f0;font-family:Inter,Arial,sans-serif;color:#1B3A5C">
-<div style="max-width:640px;margin:0 auto;background:#ffffff">
+    email_html = f"""<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f5f5f0;font-family:Arial,sans-serif">
+<div style="max-width:640px;margin:0 auto;background:#fff">
   <div style="background:#070A0D;padding:24px;text-align:center">
-    <div style="color:#D4A85A;font-family:'Space Grotesk',Arial,sans-serif;font-weight:700;font-size:22px;letter-spacing:-0.3px">Money<span style="color:#E8DCC4">Tailors</span> Daily Brief</div>
-    <div style="color:#7A9BB5;font-size:11px;letter-spacing:1.5px;margin-top:6px">{datetime.now(timezone.utc).strftime('%A, %d %B %Y')}</div>
+    <div style="color:#D4A85A;font-weight:700;font-size:22px">MoneyTailors Daily Brief</div>
+    <div style="color:#7A9BB5;font-size:11px;margin-top:6px">{today_str}</div>
   </div>
   <div style="padding:32px 28px">
-    <h1 style="font-family:'Space Grotesk',Arial,sans-serif;font-size:26px;font-weight:700;color:#1B3A5C;line-height:1.2;margin:0 0 14px">{html.escape(title)}</h1>
-    <p style="font-size:14px;color:#666;line-height:1.6;margin:0 0 24px">{html.escape(excerpt)}</p>
-    <div style="font-size:15px;line-height:1.75;color:#333">
-      {html_content}
-    </div>
-    <div style="margin-top:36px;padding-top:24px;border-top:1px solid #eee;text-align:center">
-      <a href="{post_url}" style="display:inline-block;background:#D4A85A;color:#070A0D;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:600;font-size:14px">Read on MoneyTailors →</a>
+    <h1 style="font-size:24px;color:#1B3A5C;margin:0 0 12px">{html.escape(title)}</h1>
+    <div style="font-size:15px;line-height:1.75;color:#333">{html_content}</div>
+    <div style="margin-top:32px;text-align:center">
+      <a href="{post_url}" style="background:#D4A85A;color:#070A0D;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:600;font-size:14px">Read on MoneyTailors</a>
     </div>
   </div>
-  <div style="background:#f5f5f0;padding:20px;text-align:center;font-size:11px;color:#888">
-    You're receiving this because you subscribed to the MoneyTailors Daily Brief.<br>
-    <a href="{{{{ unsubscribe }}}}" style="color:#888">Unsubscribe</a> &nbsp;·&nbsp; <a href="{SITE_URL}" style="color:#888">MoneyTailors.com</a><br><br>
-    Not financial advice. Markets are risky. Please do your own research.
+  <div style="background:#f5f5f0;padding:16px;text-align:center;font-size:11px;color:#888">
+    <a href="{{unsubscribe}}" style="color:#888">Unsubscribe</a> · <a href="{SITE_URL}" style="color:#888">MoneyTailors.com</a>
+    <br>Not financial advice.
   </div>
 </div>
 </body></html>"""
 
-    payload = {
-        'sender': {'name': 'MoneyTailors Daily Brief', 'email': 'brief@moneytailors.com'},
-        'subject': title,
-        'htmlContent': email_html,
-        'listIds': [int(BREVO_LIST_ID)],
-    }
+    headers = {'accept': 'application/json', 'api-key': BREVO_KEY, 'content-type': 'application/json'}
 
     try:
-        resp = requests.post(
-            'https://api.brevo.com/v3/smtp/email',
-            headers={'accept': 'application/json', 'api-key': BREVO_KEY, 'content-type': 'application/json'},
-            json=payload,
-            timeout=30
-        )
-        if resp.status_code in (200, 201):
-            print(f'Brevo send OK: {resp.json()}')
+        # Create campaign
+        r = requests.post('https://api.brevo.com/v3/emailCampaigns', headers=headers, json={
+            'name': f'Daily Brief {today_str}',
+            'subject': title,
+            'sender': {'name': 'MoneyTailors Daily Brief', 'email': 'brief@moneytailors.com'},
+            'htmlContent': email_html,
+            'recipients': {'listIds': [int(BREVO_LIST_ID)]},
+        }, timeout=30)
+
+        if r.status_code not in (200, 201):
+            print(f'Brevo campaign create failed {r.status_code}: {r.text[:200]}')
+            return False
+
+        campaign_id = r.json().get('id')
+        print(f'Brevo campaign created: ID {campaign_id}')
+
+        # Send immediately
+        s = requests.post(f'https://api.brevo.com/v3/emailCampaigns/{campaign_id}/sendNow', headers=headers, timeout=30)
+        if s.status_code in (200, 201, 204):
+            print(f'Brevo campaign sent OK')
             return True
         else:
-            print(f'Brevo send failed {resp.status_code}: {resp.text[:300]}')
+            print(f'Brevo sendNow failed {s.status_code}: {s.text[:200]}')
+            return False
     except Exception as e:
         print(f'Brevo error: {e}')
-    return False
+        return False
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 def slugify(title):
