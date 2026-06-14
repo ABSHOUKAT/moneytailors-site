@@ -1,0 +1,11 @@
+.git
+.github
+.wrangler
+scripts
+node_modules
+requirements.txt
+README.md
+wrangler.toml
+*.py
+*.yml
+*.log
