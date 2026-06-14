@@ -1,5 +1,5 @@
-name = "moneytailors-v3"
-compatibility_date = "2026-06-12"
+name = "mt-live"
+compatibility_date = "2026-06-14"
 
 [assets]
 directory = "./"
