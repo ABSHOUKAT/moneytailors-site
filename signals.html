@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trading Signals — MoneyTailors | Forex, Commodities, Stocks &amp; Crypto</title>
+  <meta name="description" content="Professional trading signals for Forex, Commodities, US Stocks, and Crypto. Join the MoneyTailors signals waitlist for early access.">
+  <link rel="canonical" href="https://www.moneytailors.com/signals.html">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ---- Signals page specific ---- */
+    .signal-hero {
+      padding: 80px 0;
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+      border-bottom: 1px solid var(--rim);
+    }
+    .signal-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 50% 30%, rgba(212,168,90,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .badge-launch {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border: 1px solid rgba(255,176,32,0.4);
+      background: rgba(255,176,32,0.07);
+      border-radius: 20px;
+      font-family: var(--font-m);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--amber);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    /* Sample signal card */
+    .signal-card {
+      background: var(--panel);
+      border: 1px solid var(--rim);
+      border-radius: 10px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .signal-card.long  { border-left: 4px solid var(--green); }
+    .signal-card.short { border-left: 4px solid var(--red);   }
+    .signal-type {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: var(--font-m);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .signal-type.long  { background: rgba(0,229,122,0.12); color: var(--green); }
+    .signal-type.short { background: rgba(255,59,92,0.12);  color: var(--red);   }
+    .signal-pair {
+      font-family: var(--font-m);
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 16px;
+    }
+    .signal-levels {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 12px;
+      padding-top: 14px;
+      border-top: 1px solid var(--rim);
+    }
+    .signal-level-label { font-size: 10px; color: var(--body); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px; }
+    .signal-level-val   { font-family: var(--font-m); font-size: 14px; font-weight: 600; }
+    .signal-rr {
+      font-family: var(--font-m);
+      font-size: 12px;
+      color: var(--amber);
+      margin-top: 12px;
+    }
+    .signal-status {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 8px;
+      height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s ease infinite;
+    }
+
+    /* Pricing tiers */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 20px;
+      align-items: start;
+    }
+    @media(max-width:768px){ .pricing-grid { grid-template-columns: 1fr; } }
+    .pricing-card {
+      background: var(--panel);
+      border: 1px solid var(--rim);
+      border-radius: 12px;
+      padding: 32px 24px;
+      text-align: center;
+      position: relative;
+      transition: all var(--transition);
+    }
+    .pricing-card:hover { border-color: var(--cyan); box-shadow: 0 0 32px rgba(212,168,90,0.06); }
+    .pricing-card.featured {
+      border-color: var(--cyan);
+      background: linear-gradient(to bottom, rgba(212,168,90,0.05), var(--panel));
+    }
+    .pricing-badge {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 5px 16px;
+      background: var(--cyan);
+      color: var(--void);
+      font-family: var(--font-m);
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .pricing-tier {
+      font-family: var(--font-m);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--body);
+      margin-bottom: 12px;
+    }
+    .pricing-price {
+      font-family: var(--font-h);
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--primary);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .pricing-price sup { font-size: 20px; vertical-align: top; margin-top: 8px; }
+    .pricing-price sub { font-size: 16px; color: var(--body); }
+    .pricing-desc { font-size: 13px; color: var(--body); margin-bottom: 24px; min-height: 40px; }
+    .pricing-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      text-align: left;
+      margin-bottom: 28px;
+    }
+    .pricing-features li {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-size: 13px;
+      color: var(--body);
+      line-height: 1.5;
+    }
+    .pricing-features li .check { color: var(--green); flex-shrink: 0; font-size: 14px; }
+    .pricing-features li .cross { color: var(--body); flex-shrink: 0; opacity: 0.4; }
+
+    /* Waitlist form */
+    .waitlist-form-wrap {
+      max-width: 520px;
+      margin: 0 auto;
+      background: var(--panel);
+      border: 1px solid rgba(212,168,90,0.2);
+      border-radius: 12px;
+      padding: 36px 32px;
+    }
+    @media(max-width:600px){ .waitlist-form-wrap { padding: 24px 20px; } }
+
+    /* Delivery channels */
+    .channel-card {
+      background: var(--panel);
+      border: 1px solid var(--rim);
+      border-radius: 10px;
+      padding: 24px 20px;
+      text-align: center;
+    }
+    .channel-icon { font-size: 36px; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+
+<!-- Price Ticker -->
+<div class="ticker-wrap">
+  <div class="tradingview-widget-container" style="height:46px">
+    <div class="tradingview-widget-container__widget"></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+    {
+      "symbols":[
+        {"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},
+        {"proName":"FOREXCOM:NSXUSD","title":"Nasdaq 100"},
+        {"proName":"FOREXCOM:DJI","title":"Dow Jones"},
+        {"description":"Gold","proName":"OANDA:XAUUSD"},
+        {"description":"Silver","proName":"OANDA:XAGUSD"},
+        {"description":"WTI Oil","proName":"TVC:USOIL"},
+        {"description":"Brent","proName":"TVC:UKOIL"},
+        {"description":"Nat Gas","proName":"NYMEX:NG1!"},
+        {"description":"EUR/USD","proName":"FX:EURUSD"},
+        {"description":"GBP/USD","proName":"FX:GBPUSD"},
+        {"description":"USD/JPY","proName":"FX:USDJPY"},
+        {"description":"USD/SAR","proName":"FX_IDC:USDSAR"},
+        {"description":"USD/PKR","proName":"FX_IDC:USDPKR"},
+        {"description":"TASI","proName":"TADAWUL:TASI"},
+        {"description":"KSE-100","proName":"INDEX:KSE100"},
+        {"description":"Bitcoin","proName":"BITSTAMP:BTCUSD"},
+        {"description":"Ethereum","proName":"BITSTAMP:ETHUSD"},
+        {"description":"Solana","proName":"CRYPTO:SOLUSD"}
+      ],
+      "showSymbolLogo":true,
+      "colorTheme":"dark",
+      "isTransparent":true,
+      "displayMode":"regular",
+      "locale":"en"
+    }
+    </script>
+  </div>
+</div>
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <img src="images/logo-icon.png" alt="MoneyTailors" class="nav-logo-img">
+      <span class="logo-text">Money<span class="gold">Tailors</span></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html" >Home</a></li>
+      <li class="has-dropdown">
+        <a href="markets.html" >Markets</a>
+        <div class="nav-dropdown">
+          <a href="markets.html"><span class="dd-icon">📊</span>All Markets Hub</a>
+          <a href="markets-forex.html"><span class="dd-icon">💱</span>Forex</a>
+          <a href="markets-crypto.html"><span class="dd-icon">₿</span>Crypto / Digital</a>
+          <a href="markets-stocks.html"><span class="dd-icon">📈</span>US Stocks</a>
+          <a href="markets-tadawul.html"><span class="dd-icon">🇸🇦</span>Tadawul</a>
+          <a href="markets-psx.html"><span class="dd-icon">🇵🇰</span>PSX / KSE-100</a>
+          <a href="markets-commodities.html"><span class="dd-icon">🥇</span>Commodities</a>
+        </div>
+      </li>
+      <li><a href="indicators.html" >Indicators</a></li>
+      <li class="has-dropdown">
+        <a href="insights.html" >Insights</a>
+        <div class="nav-dropdown">
+          <a href="insights.html"><span class="dd-icon">📰</span>All Articles</a>
+          <a href="newsletter.html"><span class="dd-icon">✉</span>Daily Brief Newsletter</a>
+        </div>
+      </li>
+      <li><a href="tools.html" >Tools</a></li>
+      <li><a href="portfolio.html" >Portfolio</a></li>
+      <li><a href="social.html" >Social</a></li>
+      <li><a href="signals.html" style="color:var(--amber)" class="active">Signals ★</a></li>
+      <li><a href="contact.html" class="nav-cta">Contact</a></li>
+    </ul>
+    <button class="nav-hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="signal-hero">
+  <div class="page-wrap">
+    <div class="badge-launch">🚀 Launching Soon — Join the Waitlist</div>
+    <h1 style="font-family:var(--font-h);font-size:clamp(36px,6vw,64px);font-weight:700;color:var(--primary);line-height:1.05;letter-spacing:-1.5px;margin-bottom:20px">
+      Signals Built for<br><span style="color:var(--cyan)">Serious Traders.</span>
+    </h1>
+    <p style="font-size:17px;color:var(--body);line-height:1.75;max-width:580px;margin:0 auto 36px">
+      High-probability trade setups across Forex, Commodities, US Stocks, and Crypto. Entry, stop loss, and targets included. Delivered via Telegram and email.
+    </p>
+    <div style="display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap;margin-bottom:48px">
+      <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--body)"><span style="color:var(--green)">✓</span>Risk:Reward clearly stated</div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--body)"><span style="color:var(--green)">✓</span>Technical + fundamental basis</div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--body)"><span style="color:var(--green)">✓</span>Real-time Telegram alerts</div>
+    </div>
+    <a href="#waitlist" class="btn btn-primary" style="font-size:15px;padding:14px 32px">Join the Waitlist — Free</a>
+  </div>
+</section>
+
+<div class="page-wrap section">
+
+  <!-- Sample Signals -->
+  <div style="margin-bottom:64px" class="fade-up">
+    <div class="section-label mb-8">Sample Signals</div>
+    <p style="font-size:14px;color:var(--body);margin-bottom:24px">Here is what a MoneyTailors signal looks like — clear, actionable, no ambiguity.</p>
+    <div class="grid-3">
+
+      <div class="signal-card long">
+        <div class="signal-status"></div>
+        <div class="signal-type long">▲ LONG</div>
+        <div class="signal-pair">EUR/USD</div>
+        <div style="font-size:12px;color:var(--body);margin-bottom:8px">H4 bullish divergence + demand zone. DXY weakness.</div>
+        <div class="signal-levels">
+          <div>
+            <div class="signal-level-label">Entry</div>
+            <div class="signal-level-val text-cyan">1.08450</div>
+          </div>
+          <div>
+            <div class="signal-level-label">Stop Loss</div>
+            <div class="signal-level-val text-red">1.07900</div>
+          </div>
+          <div>
+            <div class="signal-level-label">Target</div>
+            <div class="signal-level-val text-green">1.09550</div>
+          </div>
+        </div>
+        <div class="signal-rr">Risk:Reward → 1:2 &nbsp;|&nbsp; <span style="color:var(--body)">Forex</span></div>
+      </div>
+
+      <div class="signal-card short">
+        <div class="signal-status" style="background:var(--amber);box-shadow:0 0 8px var(--amber)"></div>
+        <div class="signal-type short">▼ SHORT</div>
+        <div class="signal-pair">XAU/USD</div>
+        <div style="font-size:12px;color:var(--body);margin-bottom:8px">Gold rejection at $2,360 resistance. RSI overbought on D1.</div>
+        <div class="signal-levels">
+          <div>
+            <div class="signal-level-label">Entry</div>
+            <div class="signal-level-val text-cyan">2,348.00</div>
+          </div>
+          <div>
+            <div class="signal-level-label">Stop Loss</div>
+            <div class="signal-level-val text-red">2,368.00</div>
+          </div>
+          <div>
+            <div class="signal-level-label">Target</div>
+            <div class="signal-level-val text-green">2,308.00</div>
+          </div>
+        </div>
+        <div class="signal-rr">Risk:Reward → 1:2 &nbsp;|&nbsp; <span style="color:var(--body)">Commodities</span></div>
+      </div>
+
+      <div class="signal-card long">
+        <div class="signal-status" style="background:var(--body);box-shadow:none;opacity:0.5;animation:none"></div>
+        <div class="signal-type long">▲ LONG</div>
+        <div class="signal-pair">NVDA</div>
+        <div style="font-size:12px;color:var(--body);margin-bottom:8px">Breakout above consolidation range. AI earnings catalyst.</div>
+        <div class="signal-levels">
+          <div>
+            <div class="signal-level-label">Entry</div>
+            <div class="signal-level-val text-cyan">$875.00</div>
+          </div>
+          <div>
+            <div class="signal-level-label">Stop Loss</div>
+            <div class="signal-level-val text-red">$845.00</div>
+          </div>
+          <div>
+            <div class="signal-level-label">Target</div>
+            <div class="signal-level-val text-green">$935.00</div>
+          </div>
+        </div>
+        <div class="signal-rr">Risk:Reward → 1:2 &nbsp;|&nbsp; <span style="color:var(--body)">US Stocks</span></div>
+      </div>
+
+    </div>
+    <p style="font-size:11px;color:var(--body);margin-top:16px;text-align:center">Sample signals shown for illustration. Past signals are not indicative of future results.</p>
+  </div>
+
+  <!-- Markets Covered -->
+  <div style="margin-bottom:64px" class="fade-up">
+    <div class="section-label mb-24">Coverage</div>
+    <div class="grid-4">
+      <div class="card card-accent" style="text-align:center">
+        <div style="font-size:32px;margin-bottom:12px">💱</div>
+        <h3 style="font-family:var(--font-h);font-size:18px;font-weight:700;color:var(--primary);margin-bottom:8px">Forex</h3>
+        <p style="font-size:12px;color:var(--body)">EUR/USD, GBP/USD, USD/JPY, USD/SAR, USD/PKR and majors. H1 to D1 timeframes.</p>
+      </div>
+      <div class="card card-accent" style="text-align:center">
+        <div style="font-size:32px;margin-bottom:12px">🥇</div>
+        <h3 style="font-family:var(--font-h);font-size:18px;font-weight:700;color:var(--primary);margin-bottom:8px">Commodities</h3>
+        <p style="font-size:12px;color:var(--body)">Gold (XAU/USD), Silver, Crude Oil (WTI &amp; Brent), Natural Gas.</p>
+      </div>
+      <div class="card card-accent" style="text-align:center">
+        <div style="font-size:32px;margin-bottom:12px">📈</div>
+        <h3 style="font-family:var(--font-h);font-size:18px;font-weight:700;color:var(--primary);margin-bottom:8px">Stocks</h3>
+        <p style="font-size:12px;color:var(--body)">US large-caps, Tadawul blue chips, and PSX leading stocks. Weekly swings.</p>
+      </div>
+      <div class="card card-accent" style="text-align:center">
+        <div style="font-size:32px;margin-bottom:12px">₿</div>
+        <h3 style="font-family:var(--font-h);font-size:18px;font-weight:700;color:var(--primary);margin-bottom:8px">Crypto</h3>
+        <p style="font-size:12px;color:var(--body)">Bitcoin, Ethereum, and select high-volume altcoins. Spot and futures.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pricing -->
+  <div style="margin-bottom:64px" class="fade-up">
+    <div class="section-label mb-8" style="text-align:center">Pricing Plans</div>
+    <h2 class="section-title" style="text-align:center;margin-bottom:8px">Choose Your Edge</h2>
+    <p style="font-size:14px;color:var(--body);text-align:center;margin-bottom:40px">All plans include access to free tools and market data. Paid plans launch once we hit 500 waitlist members.</p>
+    <div class="pricing-grid">
+
+      <!-- Free -->
+      <div class="pricing-card">
+        <div class="pricing-tier">Free</div>
+        <div class="pricing-price"><sup>$</sup>0<sub>/mo</sub></div>
+        <div class="pricing-desc">Core tools and market data. Always free.</div>
+        <ul class="pricing-features">
+          <li><span class="check">✓</span>Live market data (TradingView)</li>
+          <li><span class="check">✓</span>All 6 trading calculators</li>
+          <li><span class="check">✓</span>Economic indicators dashboard</li>
+          <li><span class="check">✓</span>Market insights &amp; articles</li>
+          <li><span class="check">✓</span>YouTube analysis videos</li>
+          <li><span class="cross">✗</span><span style="opacity:0.5">Trading signals</span></li>
+          <li><span class="cross">✗</span><span style="opacity:0.5">Telegram alerts</span></li>
+        </ul>
+        <a href="tools.html" class="btn btn-outline" style="width:100%;justify-content:center">Use Free Tools</a>
+      </div>
+
+      <!-- Pro -->
+      <div class="pricing-card featured">
+        <div class="pricing-badge">Most Popular</div>
+        <div class="pricing-tier" style="color:var(--cyan)">Pro</div>
+        <div class="pricing-price"><sup>$</sup>19<sub>/mo</sub></div>
+        <div class="pricing-desc">Full signal coverage. Best value for active traders.</div>
+        <ul class="pricing-features">
+          <li><span class="check">✓</span>Everything in Free</li>
+          <li><span class="check">✓</span>Forex signals (5–8/week)</li>
+          <li><span class="check">✓</span>Commodities signals (2–4/week)</li>
+          <li><span class="check">✓</span>Crypto signals (2–3/week)</li>
+          <li><span class="check">✓</span>Telegram channel access</li>
+          <li><span class="check">✓</span>Email signal delivery</li>
+          <li><span class="cross">✗</span><span style="opacity:0.5">Priority stock signals</span></li>
+        </ul>
+        <a href="#waitlist" class="btn btn-primary" style="width:100%;justify-content:center">Join Waitlist</a>
+      </div>
+
+      <!-- Elite -->
+      <div class="pricing-card">
+        <div class="pricing-tier">Elite</div>
+        <div class="pricing-price"><sup>$</sup>39<sub>/mo</sub></div>
+        <div class="pricing-desc">All markets. Priority delivery. Full analysis notes.</div>
+        <ul class="pricing-features">
+          <li><span class="check">✓</span>Everything in Pro</li>
+          <li><span class="check">✓</span>US &amp; GCC stock signals</li>
+          <li><span class="check">✓</span>PSX / Tadawul setups</li>
+          <li><span class="check">✓</span>Full technical analysis notes</li>
+          <li><span class="check">✓</span>Priority signal delivery</li>
+          <li><span class="check">✓</span>Monthly market outlook report</li>
+          <li><span class="check">✓</span>Direct Q&amp;A access</li>
+        </ul>
+        <a href="#waitlist" class="btn btn-outline" style="width:100%;justify-content:center">Join Waitlist</a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Delivery channels -->
+  <div style="margin-bottom:64px" class="fade-up">
+    <div class="section-label mb-24">How Signals Are Delivered</div>
+    <div class="grid-3">
+      <div class="channel-card">
+        <div class="channel-icon">✈️</div>
+        <h3 style="font-family:var(--font-h);font-size:17px;font-weight:600;color:var(--primary);margin-bottom:8px">Telegram Channel</h3>
+        <p style="font-size:13px;color:var(--body)">Instant push notification the moment a signal is published. Includes chart screenshot, entry, stop, targets, and brief analysis note.</p>
+      </div>
+      <div class="channel-card">
+        <div class="channel-icon">📧</div>
+        <h3 style="font-family:var(--font-h);font-size:17px;font-weight:600;color:var(--primary);margin-bottom:8px">Email Newsletter</h3>
+        <p style="font-size:13px;color:var(--body)">Daily digest of active signals, results from closed trades, and upcoming high-impact events to watch. Delivered to your inbox.</p>
+      </div>
+      <div class="channel-card">
+        <div class="channel-icon">🌐</div>
+        <h3 style="font-family:var(--font-h);font-size:17px;font-weight:600;color:var(--primary);margin-bottom:8px">Members Portal</h3>
+        <p style="font-size:13px;color:var(--body)">Private web dashboard showing all open and historical signals, performance stats, and win rate by market. Coming with launch.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Waitlist Form -->
+  <div id="waitlist" class="fade-up" style="margin-bottom:64px">
+    <div class="section-label mb-8" style="text-align:center">Early Access</div>
+    <h2 class="section-title" style="text-align:center;margin-bottom:8px">Join the Waitlist</h2>
+    <p style="font-size:14px;color:var(--body);text-align:center;margin-bottom:32px">First 500 members get 30 days free on any paid plan at launch. No credit card. No spam.</p>
+    <div class="waitlist-form-wrap">
+      <form action="https://api.web3forms.com/submit" method="POST" id="waitlist-form">
+        <input type="hidden" name="access_key" value="b51b18e2-1aa5-416d-9d17-2bfaeabda7ee">
+        <input type="hidden" name="subject" value="MoneyTailors Signals Waitlist">
+        <input type="hidden" name="redirect" value="false">
+        <input type="checkbox" name="botcheck" style="display:none">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input class="form-input" type="text" name="name" placeholder="Your name" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input class="form-input" type="email" name="email" placeholder="you@example.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Markets of Interest</label>
+          <select class="form-select" name="markets">
+            <option value="">Select primary market</option>
+            <option value="Forex">Forex</option>
+            <option value="Commodities">Commodities (Gold, Oil)</option>
+            <option value="Stocks">Stocks (US / Tadawul / PSX)</option>
+            <option value="Crypto">Crypto</option>
+            <option value="All">All Markets</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Preferred Plan</label>
+          <select class="form-select" name="plan">
+            <option value="Pro">Pro — $19/month</option>
+            <option value="Elite">Elite — $39/month</option>
+            <option value="Undecided">Undecided</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;font-size:15px;padding:13px">Reserve My Spot</button>
+        <div id="wl-msg" style="display:none;margin-top:16px;padding:12px 16px;border-radius:6px;font-size:14px;text-align:center"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer fade-up">
+    <strong>Risk Disclosure:</strong> Trading signals are provided for educational and informational purposes only. Trading Forex, Commodities, Stocks, and Crypto involves substantial risk of loss and may not be suitable for all investors. Past signal performance is not indicative of future results. Never risk money you cannot afford to lose. Always manage your position size and use stop losses.
+  </div>
+
+</div>
+
+<footer class="footer">
+  <div class="footer-grid">
+    <div>
+      <a href="index.html" class="nav-logo" style="margin-bottom:14px;display:inline-flex">
+        <img src="images/logo-icon.png" alt="MoneyTailors" class="nav-logo-img">
+        <span class="logo-text">Money<span class="gold">Tailors</span></span>
+      </a>
+      <p class="footer-brand-desc">Crafting financial prosperity. Daily market intelligence, trading tools, and investment insights across Forex, Crypto, Stocks, Tadawul, and PSX.</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Markets</div>
+      <ul class="footer-links">
+        <li><a href="markets-forex.html">Forex</a></li>
+        <li><a href="markets-crypto.html">Crypto</a></li>
+        <li><a href="markets-stocks.html">US Stocks</a></li>
+        <li><a href="markets-tadawul.html">Tadawul</a></li>
+        <li><a href="markets-psx.html">PSX</a></li>
+        <li><a href="markets-commodities.html">Commodities</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Tools</div>
+      <ul class="footer-links">
+        <li><a href="tools.html#lotsize">Lot Size (Universal)</a></li>
+        <li><a href="tools.html#forex">Forex Pip Value</a></li>
+        <li><a href="tools.html#position">Position Size</a></li>
+        <li><a href="tools.html#compound">Compound Return</a></li>
+        <li><a href="tools.html#sip">SIP Growth</a></li>
+        <li><a href="tools.html#zakat">PSX Zakat</a></li>
+        <li><a href="portfolio.html">Portfolio Tracker</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Company</div>
+      <ul class="footer-links">
+        <li><a href="insights.html">Insights</a></li>
+        <li><a href="newsletter.html">Daily Brief</a></li>
+        <li><a href="signals.html">Trading Signals</a></li>
+        <li><a href="indicators.html">Economic Data</a></li>
+        <li><a href="social.html">Social Media</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">&copy; 2025 MoneyTailors. Crafting Financial Prosperity. All rights reserved.</span>
+    <div class="footer-legal">
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Use</a>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script>
+document.getElementById('waitlist-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  const msg = document.getElementById('wl-msg');
+  btn.textContent = 'Submitting...'; btn.disabled = true;
+  try {
+    const res  = await fetch('https://api.web3forms.com/submit', { method:'POST', body: new FormData(e.target) });
+    const data = await res.json();
+    if (data.success) {
+      msg.style.display = 'block'; msg.style.background = 'rgba(0,229,122,0.1)'; msg.style.color = 'var(--green)'; msg.style.border = '1px solid rgba(0,229,122,0.3)';
+      msg.innerHTML = "✓ You're on the list! We'll email you before launch with your early-access code.";
+      e.target.reset();
+    } else { throw new Error(); }
+  } catch {
+    msg.style.display = 'block'; msg.style.background = 'rgba(255,59,92,0.1)'; msg.style.color = 'var(--red)'; msg.style.border = '1px solid rgba(255,59,92,0.3)';
+    msg.textContent = 'Something went wrong. Please try again or contact us directly.';
+  }
+  btn.textContent = 'Reserve My Spot'; btn.disabled = false;
+});
+</script>
+<script src="js/news-ticker.js"></script>
+</body>
+</html>

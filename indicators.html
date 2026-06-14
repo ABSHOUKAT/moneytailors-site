@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Economic Indicators — MoneyTailors | Global Macro Data</title>
+  <meta name="description" content="Live economic indicators for US, UK, EU, Saudi Arabia, Pakistan, China, Japan and UAE. GDP growth, inflation, unemployment and central bank rates.">
+  <link rel="canonical" href="https://www.moneytailors.com/indicators.html">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .country-tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:32px; }
+    .country-tab  { padding:7px 16px; background:var(--raised); border:1px solid var(--rim); border-radius:var(--radius); font-family:var(--font-b); font-size:13px; font-weight:500; color:var(--body); cursor:pointer; transition:all var(--transition); display:flex; align-items:center; gap:6px; }
+    .country-tab.active, .country-tab:hover { background:var(--glow); border-color:var(--cyan); color:var(--cyan); }
+    .country-flag { font-size:16px; line-height:1; }
+
+    .indicator-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
+    @media(max-width:900px){ .indicator-grid { grid-template-columns:repeat(2,1fr); } }
+    @media(max-width:500px){ .indicator-grid { grid-template-columns:1fr 1fr; } }
+
+    .ind-card { background:var(--panel); border:1px solid var(--rim); border-radius:10px; padding:20px; position:relative; overflow:hidden; }
+    .ind-card::after { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--cyan); opacity:0.5; }
+    .ind-label { font-size:11px; font-weight:600; color:var(--body); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+    .ind-value { font-family:var(--font-m); font-size:28px; font-weight:600; color:var(--primary); line-height:1; margin-bottom:6px; }
+    .ind-unit  { font-size:11px; color:var(--body); margin-bottom:6px; }
+    .ind-year  { font-family:var(--font-m); font-size:10px; color:var(--body); opacity:0.7; }
+    .ind-trend { display:inline-flex; align-items:center; gap:4px; font-family:var(--font-m); font-size:11px; font-weight:600; margin-top:6px; }
+
+    .rates-table { width:100%; border-collapse:collapse; }
+    .rates-table th { font-family:var(--font-m); font-size:11px; font-weight:600; color:var(--body); text-transform:uppercase; letter-spacing:1px; padding:10px 14px; text-align:left; border-bottom:1px solid var(--rim); }
+    .rates-table td { font-size:14px; padding:12px 14px; border-bottom:1px solid rgba(26,37,53,0.5); color:var(--primary); }
+    .rates-table tr:hover td { background:var(--raised); }
+    .rates-table .rate-val { font-family:var(--font-m); font-weight:600; }
+    .rates-table .rate-hi  { color:var(--red); }
+    .rates-table .rate-med { color:var(--amber); }
+    .rates-table .rate-lo  { color:var(--green); }
+
+    .skeleton { background:linear-gradient(90deg,var(--raised) 25%,var(--surface) 50%,var(--raised) 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:4px; height:28px; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    .source-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:var(--raised); border:1px solid var(--rim); border-radius:20px; font-size:11px; color:var(--body); }
+  </style>
+</head>
+<body>
+
+<!-- Price Ticker -->
+<div class="ticker-wrap">
+  <div class="tradingview-widget-container" style="height:46px">
+    <div class="tradingview-widget-container__widget"></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+    {
+      "symbols":[
+        {"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},
+        {"proName":"FOREXCOM:NSXUSD","title":"Nasdaq 100"},
+        {"proName":"FOREXCOM:DJI","title":"Dow Jones"},
+        {"description":"Gold","proName":"OANDA:XAUUSD"},
+        {"description":"Silver","proName":"OANDA:XAGUSD"},
+        {"description":"WTI Oil","proName":"TVC:USOIL"},
+        {"description":"Brent","proName":"TVC:UKOIL"},
+        {"description":"Nat Gas","proName":"NYMEX:NG1!"},
+        {"description":"EUR/USD","proName":"FX:EURUSD"},
+        {"description":"GBP/USD","proName":"FX:GBPUSD"},
+        {"description":"USD/JPY","proName":"FX:USDJPY"},
+        {"description":"USD/SAR","proName":"FX_IDC:USDSAR"},
+        {"description":"USD/PKR","proName":"FX_IDC:USDPKR"},
+        {"description":"TASI","proName":"TADAWUL:TASI"},
+        {"description":"KSE-100","proName":"INDEX:KSE100"},
+        {"description":"Bitcoin","proName":"BITSTAMP:BTCUSD"},
+        {"description":"Ethereum","proName":"BITSTAMP:ETHUSD"},
+        {"description":"Solana","proName":"CRYPTO:SOLUSD"}
+      ],
+      "showSymbolLogo":true,
+      "colorTheme":"dark",
+      "isTransparent":true,
+      "displayMode":"regular",
+      "locale":"en"
+    }
+    </script>
+  </div>
+</div>
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <img src="images/logo-icon.png" alt="MoneyTailors" class="nav-logo-img">
+      <span class="logo-text">Money<span class="gold">Tailors</span></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html" >Home</a></li>
+      <li class="has-dropdown">
+        <a href="markets.html" >Markets</a>
+        <div class="nav-dropdown">
+          <a href="markets.html"><span class="dd-icon">📊</span>All Markets Hub</a>
+          <a href="markets-forex.html"><span class="dd-icon">💱</span>Forex</a>
+          <a href="markets-crypto.html"><span class="dd-icon">₿</span>Crypto / Digital</a>
+          <a href="markets-stocks.html"><span class="dd-icon">📈</span>US Stocks</a>
+          <a href="markets-tadawul.html"><span class="dd-icon">🇸🇦</span>Tadawul</a>
+          <a href="markets-psx.html"><span class="dd-icon">🇵🇰</span>PSX / KSE-100</a>
+          <a href="markets-commodities.html"><span class="dd-icon">🥇</span>Commodities</a>
+        </div>
+      </li>
+      <li><a href="indicators.html" class="active">Indicators</a></li>
+      <li class="has-dropdown">
+        <a href="insights.html" >Insights</a>
+        <div class="nav-dropdown">
+          <a href="insights.html"><span class="dd-icon">📰</span>All Articles</a>
+          <a href="newsletter.html"><span class="dd-icon">✉</span>Daily Brief Newsletter</a>
+        </div>
+      </li>
+      <li><a href="tools.html" >Tools</a></li>
+      <li><a href="portfolio.html" >Portfolio</a></li>
+      <li><a href="social.html" >Social</a></li>
+      <li><a href="signals.html" style="color:var(--amber)" >Signals ★</a></li>
+      <li><a href="contact.html" class="nav-cta">Contact</a></li>
+    </ul>
+    <button class="nav-hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="page-wrap">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+      <div class="section-label" style="margin:0">Macro Data</div>
+      <div class="source-badge">📊 World Bank Open Data</div>
+      <div class="source-badge">🏦 Central Bank Rates</div>
+    </div>
+    <h1 class="section-title">Economic Indicators</h1>
+    <p class="section-sub">Key macro indicators for 8 major economies. Data sourced from the World Bank and official central bank publications.</p>
+  </div>
+</div>
+
+<div class="page-wrap section">
+
+  <!-- Country Tabs -->
+  <div class="country-tabs" id="country-tabs">
+    <button class="country-tab active" data-code="US"  data-wb="US"><span class="country-flag">🇺🇸</span>United States</button>
+    <button class="country-tab" data-code="GB"  data-wb="GB"><span class="country-flag">🇬🇧</span>United Kingdom</button>
+    <button class="country-tab" data-code="EU"  data-wb="DE"><span class="country-flag">🇪🇺</span>Euro Area</button>
+    <button class="country-tab" data-code="SA"  data-wb="SA"><span class="country-flag">🇸🇦</span>Saudi Arabia</button>
+    <button class="country-tab" data-code="PK"  data-wb="PK"><span class="country-flag">🇵🇰</span>Pakistan</button>
+    <button class="country-tab" data-code="CN"  data-wb="CN"><span class="country-flag">🇨🇳</span>China</button>
+    <button class="country-tab" data-code="JP"  data-wb="JP"><span class="country-flag">🇯🇵</span>Japan</button>
+    <button class="country-tab" data-code="AE"  data-wb="AE"><span class="country-flag">🇦🇪</span>UAE</button>
+  </div>
+
+  <!-- Indicator Cards -->
+  <div class="indicator-grid" id="indicator-cards">
+    <div class="ind-card"><div class="skeleton"></div></div>
+    <div class="ind-card"><div class="skeleton"></div></div>
+    <div class="ind-card"><div class="skeleton"></div></div>
+    <div class="ind-card"><div class="skeleton"></div></div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Central Bank Rates Table -->
+  <div style="margin-bottom:40px">
+    <div class="section-label mb-16">Central Bank Policy Rates</div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table class="rates-table">
+        <thead>
+          <tr>
+            <th>Country / Economy</th>
+            <th>Central Bank</th>
+            <th>Rate</th>
+            <th>Direction</th>
+            <th>Last Changed</th>
+            <th>Next Meeting</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span style="margin-right:8px">🇺🇸</span>United States</td>
+            <td style="color:var(--body);font-size:13px">Federal Reserve (Fed)</td>
+            <td class="rate-val rate-med">4.25% – 4.50%</td>
+            <td><span class="tag tag-analysis">Hold</span></td>
+            <td style="font-family:var(--font-m);font-size:12px;color:var(--body)">Dec 2024</td>
+            <td style="font-family:var(--font-m);font-size:12px;color:var(--cyan)">Jul 2025</td>
+          </tr>
+          <tr>
+            <td><span style="margin-right:8px">🇬🇧</span>United Kingdom</td>
+            <td style="color:var(--body);font-size:13px">Bank of England (BoE)</td>
+            <td class="rate-val rate-med">4.50%</td>
+            <td><span class="tag tag-psx">Cutting</span></td>
+            <td style="font-family:var(--font-m);font-size:12px;color:var(--body)">Feb 2025</td>
+            <td style="font-family:var(--font-m);font-size:12px;color:var(--cyan)">May 2025</td>
+          </tr>
+          <tr>
+            <td><span style="margin-right:8px">🇪🇺</span>Euro Area</td>
+            <td style="color:var(--body);font-size:13px">European Central Bank (ECB)</td>
+            <td class="rate-val rate-med">2.65%</td>
+            <td><span class="tag tag-psx">Cutting</span></td>
+            <td style="font-family:var(--font-m);font-size:12px;color:var(--body)">Mar 2025</td>
+            <td style="font-family:var(--font-m);font-size:12px;color:var(--cyan)">Jun 2025</td>
+          </tr>
+          <tr>
+            <td><span style="margin-right:8px">🇸🇦</span>Saudi Arabia</td>
+            <td style="color:var(--body);font-size:13px">Saudi Central Bank (SAMA)</td>
+            <td class="rate-val rate-med">5.00%</td>
+            <td><span class="tag tag-analysis">Tracks Fed</span></td>
+            <td style="font-family:var(--font-m);font-size:12px;color:var(--body)">Dec 2024</td>
+            <td style="font-family:var(--font-m);font-size:12px;color:var(--cyan)">Follows Fed</td>
+          </tr>
+          <tr>
+            <td><span style="margin-right:8px">🇵🇰</span>Pakistan</td>
+            <td style="color:var(--body);font-size:13px">State Bank of Pakistan (SBP)</td>
+            <td class="rate-val rate-hi">12.00%</td>
+            <td><span class="tag tag-psx">Cutting</span></td>
+            <td style="font-family:var(--font-m);font-size:12px;color:var(--body)">Jan 2025</td>
+            <td style="font-family:var(--font-m);font-size:12px;color:var(--cyan)">Mar 2025</td>
+          </tr>
+          <tr>
+            <td><span style="margin-right:8px">🇨🇳</span>China</td>
+            <td style="color:var(--body);font-size:13px">People's Bank of China (PBoC)</td>
+            <td class="rate-val rate-lo">3.10%</td>
+            <td><span class="tag tag-psx">Easing</span></td>
+            <td style="font-family:var(--font-m);font-size:12px;color:var(--body)">Oct 2024</td>
+            <td style="font-family:var(--font-m);font-size:12px;color:var(--cyan)">Quarterly</td>
+          </tr>
+          <tr>
+            <td><span style="margin-right:8px">🇯🇵</span>Japan</td>
+            <td style="color:var(--body);font-size:13px">Bank of Japan (BoJ)</td>
+            <td class="rate-val rate-lo">0.50%</td>
+            <td><span class="tag tag-stocks">Hiking</span></td>
+            <td style="font-family:var(--font-m);font-size:12px;color:var(--body)">Jan 2025</td>
+            <td style="font-family:var(--font-m);font-size:12px;color:var(--cyan)">Mar 2025</td>
+          </tr>
+          <tr>
+            <td><span style="margin-right:8px">🇦🇪</span>UAE</td>
+            <td style="color:var(--body);font-size:13px">Central Bank of UAE (CBUAE)</td>
+            <td class="rate-val rate-med">4.40%</td>
+            <td><span class="tag tag-analysis">Tracks Fed</span></td>
+            <td style="font-family:var(--font-m);font-size:12px;color:var(--body)">Dec 2024</td>
+            <td style="font-family:var(--font-m);font-size:12px;color:var(--cyan)">Follows Fed</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:11px;color:var(--body);margin-top:10px">Rates are manually maintained and updated after each central bank meeting. Last reviewed: January 2025.</p>
+  </div>
+
+  <!-- TradingView Economic Calendar -->
+  <div>
+    <div class="section-label mb-16">Upcoming Economic Events</div>
+    <div class="tv-container">
+      <div class="tv-label">Economic Calendar — Key Events</div>
+      <div class="tradingview-widget-container">
+        <div class="tradingview-widget-container__widget"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
+        {"width":"100%","height":500,"colorTheme":"dark","isTransparent":true,"locale":"en","importanceFilter":"0,1","countryFilter":"us,eu,gb,sa,pk,jp,cn,ae"}
+        </script>
+      </div>
+    </div>
+
+    <div class="tv-container" style="margin-top:24px">
+      <div class="tv-label">Trading Economics — Live Calendar &amp; Actuals</div>
+      <div class="card" style="padding:0;overflow:hidden;border-radius:8px">
+        <iframe src="https://tradingeconomics.com/calendar"
+                width="100%" height="560"
+                frameborder="0" loading="lazy"
+                style="border:0;display:block;background:#fff"
+                title="Trading Economics Economic Calendar"></iframe>
+      </div>
+      <p style="font-size:12px;color:var(--body);margin-top:10px;line-height:1.6">Live economic calendar with actual, forecast, and previous figures across all major economies. Data and widget provided by <a href="https://tradingeconomics.com" target="_blank" rel="noopener" style="color:var(--gold)">Trading Economics</a>.</p>
+    </div>
+  </div>
+
+</div>
+
+<footer class="footer">
+  <div class="footer-grid">
+    <div>
+      <a href="index.html" class="nav-logo" style="margin-bottom:14px;display:inline-flex">
+        <img src="images/logo-icon.png" alt="MoneyTailors" class="nav-logo-img">
+        <span class="logo-text">Money<span class="gold">Tailors</span></span>
+      </a>
+      <p class="footer-brand-desc">Crafting financial prosperity. Daily market intelligence, trading tools, and investment insights across Forex, Crypto, Stocks, Tadawul, and PSX.</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Markets</div>
+      <ul class="footer-links">
+        <li><a href="markets-forex.html">Forex</a></li>
+        <li><a href="markets-crypto.html">Crypto</a></li>
+        <li><a href="markets-stocks.html">US Stocks</a></li>
+        <li><a href="markets-tadawul.html">Tadawul</a></li>
+        <li><a href="markets-psx.html">PSX</a></li>
+        <li><a href="markets-commodities.html">Commodities</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Tools</div>
+      <ul class="footer-links">
+        <li><a href="tools.html#lotsize">Lot Size (Universal)</a></li>
+        <li><a href="tools.html#forex">Forex Pip Value</a></li>
+        <li><a href="tools.html#position">Position Size</a></li>
+        <li><a href="tools.html#compound">Compound Return</a></li>
+        <li><a href="tools.html#sip">SIP Growth</a></li>
+        <li><a href="tools.html#zakat">PSX Zakat</a></li>
+        <li><a href="portfolio.html">Portfolio Tracker</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Company</div>
+      <ul class="footer-links">
+        <li><a href="insights.html">Insights</a></li>
+        <li><a href="newsletter.html">Daily Brief</a></li>
+        <li><a href="signals.html">Trading Signals</a></li>
+        <li><a href="indicators.html">Economic Data</a></li>
+        <li><a href="social.html">Social Media</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">&copy; 2025 MoneyTailors. Crafting Financial Prosperity. All rights reserved.</span>
+    <div class="footer-legal">
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Use</a>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script>
+// ---- World Bank indicator definitions ----
+const WB_INDICATORS = [
+  { id:'NY.GDP.MKTP.KD.ZG', label:'GDP Growth',       unit:'% annual',     icon:'📈' },
+  { id:'FP.CPI.TOTL.ZG',    label:'Inflation (CPI)',  unit:'% annual',     icon:'🔥' },
+  { id:'SL.UEM.TOTL.ZS',    label:'Unemployment',     unit:'% labor force', icon:'👷' },
+  { id:'BN.CAB.XOKA.GD.ZS', label:'Current Account',  unit:'% of GDP',     icon:'⚖️' },
+];
+
+const COUNTRY_NAMES = {
+  US:'United States', GB:'United Kingdom', DE:'Euro Area (Germany)',
+  SA:'Saudi Arabia',  PK:'Pakistan',       CN:'China', JP:'Japan', AE:'UAE'
+};
+
+async function loadIndicators(wbCode) {
+  const container = document.getElementById('indicator-cards');
+  container.innerHTML = WB_INDICATORS.map(() => `<div class="ind-card"><div class="skeleton" style="height:80px;margin-bottom:10px"></div><div class="skeleton" style="height:16px;width:60%"></div></div>`).join('');
+
+  const codes = WB_INDICATORS.map(i => i.id).join(';');
+  const url   = `https://api.worldbank.org/v2/country/${wbCode}/indicator/${codes}?format=json&mrv=1&per_page=10`;
+
+  try {
+    const res  = await fetch(url);
+    const data = await res.json();
+    const rows = data[1] || [];
+
+    const byIndicator = {};
+    rows.forEach(r => { if(r.value !== null) byIndicator[r.indicator.id] = r; });
+
+    container.innerHTML = WB_INDICATORS.map(ind => {
+      const row = byIndicator[ind.id];
+      if (!row) return buildIndCard(ind, null, null, null);
+      const val  = parseFloat(row.value);
+      const year = row.date;
+      const trend = val > 0 ? 'up' : val < 0 ? 'down' : 'flat';
+      return buildIndCard(ind, val, year, trend);
+    }).join('');
+
+  } catch(e) {
+    container.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><h3>Data temporarily unavailable</h3><p>World Bank API may be rate-limited. Please try again in a moment.</p></div>`;
+  }
+}
+
+function buildIndCard(ind, val, year, trend) {
+  const formatted = val !== null ? (Math.abs(val) < 10 ? val.toFixed(2) : val.toFixed(1)) : '—';
+  const trendHtml = val !== null ? `<div class="ind-trend ${trend === 'up' ? 'text-green' : trend === 'down' ? 'text-red' : 'text-muted'}">${trend === 'up' ? '▲' : trend === 'down' ? '▼' : '●'} ${trend}</div>` : '';
+  return `
+    <div class="ind-card">
+      <div class="ind-label">${ind.icon} ${ind.label}</div>
+      <div class="ind-value">${formatted}${val !== null ? '<span style="font-size:16px;color:var(--body)">%</span>' : ''}</div>
+      <div class="ind-unit">${ind.unit}</div>
+      ${year ? `<div class="ind-year">World Bank ${year}</div>` : ''}
+      ${trendHtml}
+    </div>`;
+}
+
+// ---- Country tab switching ----
+document.querySelectorAll('.country-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.country-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    loadIndicators(tab.dataset.wb);
+  });
+});
+
+// Load default on page open
+loadIndicators('US');
+</script>
+<script src="js/news-ticker.js"></script>
+</body>
+</html>

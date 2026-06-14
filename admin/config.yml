@@ -1,0 +1,33 @@
+# MoneyTailors CMS Configuration (Sveltia CMS)
+# Requires: GitHub repo + Cloudflare Pages deployment
+# Replace GITHUB_USERNAME and REPO_NAME before deploying
+
+backend:
+  name: github
+  repo: GITHUB_USERNAME/moneytailors        # e.g. aqeelbinshoukat/moneytailors
+  branch: main
+  base_url: https://sveltia-cms-auth.YOURNAME.workers.dev   # optional OAuth proxy — see setup notes
+
+media_folder: images/uploads
+public_folder: /images/uploads
+
+collections:
+  - name: posts
+    label: Articles & Insights
+    label_singular: Article
+    folder: content
+    extension: json
+    format: json
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    identifier_field: title
+    fields:
+      - { label: Title,    name: title,    widget: string }
+      - { label: Slug,     name: slug,     widget: string, hint: "URL-friendly ID, e.g. forex-weekly-analysis" }
+      - { label: Date,     name: date,     widget: datetime, format: "YYYY-MM-DD" }
+      - label: Category
+        name: category
+        widget: select
+        options: [Forex, PSX, Tadawul, Stocks, Investing, Analysis, Crypto]
+      - { label: Excerpt,  name: excerpt,  widget: text,   hint: "1-2 sentence summary shown on listing page" }
+      - { label: Content,  name: content,  widget: markdown }

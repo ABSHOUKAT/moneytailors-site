@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoneyTailors — Crafting Financial Prosperity | Markets, Tools, Daily Brief</title>
+  <meta name="description" content="Crafting Financial Prosperity — live markets, 7 free trading calculators, portfolio tracker, economic indicators, daily market brief newsletter, and trading signals for Forex, Crypto, Stocks, Tadawul, and PSX.">
+  <meta name="keywords" content="trading, investing, PSX, Tadawul, forex, market analysis, GCC stocks, financial tools, KSE-100">
+  <meta name="author" content="MoneyTailors">
+  <link rel="canonical" href="https://www.moneytailors.com/">
+  <meta property="og:title" content="MoneyTailors — Trade Smart. Invest Smarter.">
+  <meta property="og:description" content="Market analysis, trading calculators, and investment insights for GCC and global markets.">
+  <meta property="og:url" content="https://www.moneytailors.com/">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "MoneyTailors",
+    "url": "https://www.moneytailors.com",
+    "description": "Finance media brand delivering trading analysis, market tools, and investment insights for GCC and global markets.",
+    "sameAs": ["https://www.youtube.com/@MoneyTailors"]
+  }
+  </script>
+  <link rel="icon" type="image/png" href="images/logo-icon.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- Ticker Tape -->
+<div class="ticker-wrap">
+  <div class="tradingview-widget-container" style="height:46px">
+    <div class="tradingview-widget-container__widget"></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+    {
+      "symbols":[
+        {"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},
+        {"proName":"FOREXCOM:NSXUSD","title":"Nasdaq 100"},
+        {"proName":"FOREXCOM:DJI","title":"Dow Jones"},
+        {"description":"Gold","proName":"OANDA:XAUUSD"},
+        {"description":"Silver","proName":"OANDA:XAGUSD"},
+        {"description":"WTI Oil","proName":"TVC:USOIL"},
+        {"description":"Brent","proName":"TVC:UKOIL"},
+        {"description":"Nat Gas","proName":"NYMEX:NG1!"},
+        {"description":"EUR/USD","proName":"FX:EURUSD"},
+        {"description":"GBP/USD","proName":"FX:GBPUSD"},
+        {"description":"USD/JPY","proName":"FX:USDJPY"},
+        {"description":"USD/SAR","proName":"FX_IDC:USDSAR"},
+        {"description":"USD/PKR","proName":"FX_IDC:USDPKR"},
+        {"description":"TASI","proName":"TADAWUL:TASI"},
+        {"description":"KSE-100","proName":"INDEX:KSE100"},
+        {"description":"Bitcoin","proName":"BITSTAMP:BTCUSD"},
+        {"description":"Ethereum","proName":"BITSTAMP:ETHUSD"},
+        {"description":"Solana","proName":"CRYPTO:SOLUSD"}
+      ],
+      "showSymbolLogo":true,
+      "colorTheme":"dark",
+      "isTransparent":true,
+      "displayMode":"regular",
+      "locale":"en"
+    }
+    </script>
+  </div>
+</div>
+
+<!-- News Ticker -->
+<div class="news-ticker-wrap"><div class="news-ticker-label">NEWS</div><div id="news-ticker-inner"></div></div>
+
+<!-- Navigation -->
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <img src="images/logo-icon.png" alt="MoneyTailors" class="nav-logo-img">
+      <span class="logo-text">Money<span class="gold">Tailors</span></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html" class="active">Home</a></li>
+      <li class="has-dropdown">
+        <a href="markets.html" >Markets</a>
+        <div class="nav-dropdown">
+          <a href="markets.html"><span class="dd-icon">📊</span>All Markets Hub</a>
+          <a href="markets-forex.html"><span class="dd-icon">💱</span>Forex</a>
+          <a href="markets-crypto.html"><span class="dd-icon">₿</span>Crypto / Digital</a>
+          <a href="markets-stocks.html"><span class="dd-icon">📈</span>US Stocks</a>
+          <a href="markets-tadawul.html"><span class="dd-icon">🇸🇦</span>Tadawul</a>
+          <a href="markets-psx.html"><span class="dd-icon">🇵🇰</span>PSX / KSE-100</a>
+          <a href="markets-commodities.html"><span class="dd-icon">🥇</span>Commodities</a>
+        </div>
+      </li>
+      <li><a href="indicators.html" >Indicators</a></li>
+      <li class="has-dropdown">
+        <a href="insights.html" >Insights</a>
+        <div class="nav-dropdown">
+          <a href="insights.html"><span class="dd-icon">📰</span>All Articles</a>
+          <a href="newsletter.html"><span class="dd-icon">✉</span>Daily Brief Newsletter</a>
+        </div>
+      </li>
+      <li><a href="tools.html" >Tools</a></li>
+      <li><a href="portfolio.html" >Portfolio</a></li>
+      <li><a href="social.html" >Social</a></li>
+      <li><a href="signals.html" style="color:var(--amber)" >Signals ★</a></li>
+      <li><a href="contact.html" class="nav-cta">Contact</a></li>
+    </ul>
+    <button class="nav-hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <div class="hero-eyebrow">Crafting Financial Prosperity</div>
+      <h1 class="hero-title">Trade Smart.<br><span class="accent">Invest Smarter.</span></h1>
+      <p class="hero-desc">Live data for 6 asset classes, 7 free trading calculators, a portfolio tracker, daily market brief newsletter, and trading signals. Built for traders and investors in the GCC, Pakistan, and beyond.</p>
+      <div class="hero-actions">
+        <a href="newsletter.html" class="btn btn-primary">Get Daily Brief ✉</a>
+        <a href="markets.html" class="btn btn-outline">Live Markets</a>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="market-panel">
+        <div class="market-panel-header">
+          <span>Market Snapshot</span>
+          <div class="live-dot"></div>
+        </div>
+        <div class="market-rows">
+          <div class="market-row" data-idx="0">
+            <div><div class="market-symbol">XAU/USD</div><div class="market-name">Gold</div></div>
+            <div class="market-price">—</div>
+            <div class="market-change">—</div>
+          </div>
+          <div class="market-row" data-idx="1">
+            <div><div class="market-symbol">XAG/USD</div><div class="market-name">Silver</div></div>
+            <div class="market-price">—</div>
+            <div class="market-change">—</div>
+          </div>
+          <div class="market-row" data-idx="2">
+            <div><div class="market-symbol">BTC/USD</div><div class="market-name">Bitcoin</div></div>
+            <div class="market-price">—</div>
+            <div class="market-change">—</div>
+          </div>
+          <div class="market-row" data-idx="3">
+            <div><div class="market-symbol">ETH/USD</div><div class="market-name">Ethereum</div></div>
+            <div class="market-price">—</div>
+            <div class="market-change">—</div>
+          </div>
+          <div class="market-row" data-idx="4">
+            <div><div class="market-symbol">EUR/USD</div><div class="market-name">Euro / Dollar</div></div>
+            <div class="market-price">—</div>
+            <div class="market-change">—</div>
+          </div>
+          <div class="market-row" data-idx="5">
+            <div><div class="market-symbol">USD/JPY</div><div class="market-name">Dollar / Yen</div></div>
+            <div class="market-price">—</div>
+            <div class="market-change">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats Strip -->
+<div class="stats-strip">
+  <div class="stats-inner">
+    <div class="fade-up">
+      <div class="stat-value">6+</div>
+      <div class="stat-label">Markets Covered</div>
+    </div>
+    <div class="fade-up">
+      <div class="stat-value">6</div>
+      <div class="stat-label">Trading Calculators</div>
+    </div>
+    <div class="fade-up">
+      <div class="stat-value">24/7</div>
+      <div class="stat-label">Live Data Feeds</div>
+    </div>
+    <div class="fade-up">
+      <div class="stat-value">Free</div>
+      <div class="stat-label">All Tools</div>
+    </div>
+  </div>
+</div>
+
+<!-- Latest Insights -->
+<section class="section">
+  <div class="page-wrap">
+    <div class="flex-between mb-32">
+      <div>
+        <div class="section-label">Research &amp; Analysis</div>
+        <h2 class="section-title" style="margin-bottom:0">Latest Insights</h2>
+      </div>
+      <a href="insights.html" class="btn btn-outline" style="flex-shrink:0">View All</a>
+    </div>
+    <div class="grid-3 fade-up" id="home-posts">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Market Overview Widget -->
+<section class="section-sm" style="background:var(--panel);border-top:1px solid var(--rim);border-bottom:1px solid var(--rim);">
+  <div class="page-wrap">
+    <div class="section-label mb-16">Live Markets</div>
+    <div class="tv-container">
+      <div class="tv-label">Global Market Overview</div>
+      <div class="tradingview-widget-container">
+        <div class="tradingview-widget-container__widget"></div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
+        {
+          "colorTheme":"dark","dateRange":"1M","showChart":true,"locale":"en",
+          "isTransparent":true,"showSymbolLogo":true,"showFloatingTooltip":false,
+          "width":"100%","height":"500",
+          "plotLineColorGrowing":"rgba(212,168,90,1)","plotLineColorFalling":"rgba(255,59,92,1)",
+          "gridLineColor":"rgba(26,37,53,0.5)","scaleFontColor":"rgba(122,155,181,1)",
+          "belowLineFillColorGrowing":"rgba(212,168,90,0.08)","belowLineFillColorFalling":"rgba(255,59,92,0.08)",
+          "belowLineFillColorGrowingBottom":"rgba(212,168,90,0)","belowLineFillColorFallingBottom":"rgba(255,59,92,0)",
+          "symbolActiveColor":"rgba(212,168,90,0.1)",
+          "tabs":[
+            {"title":"Indices","symbols":[
+              {"s":"FOREXCOM:SPXUSD","d":"S&P 500"},
+              {"s":"FOREXCOM:NSXUSD","d":"Nasdaq 100"},
+              {"s":"TADAWUL:TASI","d":"Tadawul"},
+              {"s":"INDEX:KSE100","d":"PSX KSE-100"}
+            ]},
+            {"title":"Forex","symbols":[
+              {"s":"FX:EURUSD"},{"s":"FX:GBPUSD"},{"s":"FX:USDJPY"},
+              {"s":"FX_IDC:USDSAR"},{"s":"FX_IDC:USDPKR"},{"s":"OANDA:XAUUSD","d":"Gold"}
+            ]},
+            {"title":"Crypto","symbols":[
+              {"s":"BITSTAMP:BTCUSD"},{"s":"BITSTAMP:ETHUSD"},
+              {"s":"CRYPTO:BNBUSD"},{"s":"CRYPTO:SOLUSD"}
+            ]}
+          ]
+        }
+        </script>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Tools Preview -->
+<section class="section">
+  <div class="page-wrap">
+    <div class="section-label">Free Tools</div>
+    <h2 class="section-title">Trading Calculators</h2>
+    <p class="section-sub mb-32">Professional-grade calculators for position sizing, risk management, returns forecasting, and Zakat computation.</p>
+    <div class="grid-3">
+      <div class="card card-accent fade-up">
+        <div style="font-size:24px;margin-bottom:12px">⚡</div>
+        <h3 style="font-family:var(--font-h);font-size:18px;font-weight:600;color:var(--primary);margin-bottom:8px">Forex Pip Value</h3>
+        <p style="font-size:13px;color:var(--body);margin-bottom:18px">Calculate exact pip value in USD, SAR, or PKR for any pair and lot size.</p>
+        <a href="tools.html#forex" class="btn btn-outline" style="font-size:13px;padding:8px 16px">Open Calculator</a>
+      </div>
+      <div class="card card-accent fade-up">
+        <div style="font-size:24px;margin-bottom:12px">🎯</div>
+        <h3 style="font-family:var(--font-h);font-size:18px;font-weight:600;color:var(--primary);margin-bottom:8px">Position Size / Risk</h3>
+        <p style="font-size:13px;color:var(--body);margin-bottom:18px">Never risk more than you plan. Calculate lot sizes from account balance and stop loss.</p>
+        <a href="tools.html#position" class="btn btn-outline" style="font-size:13px;padding:8px 16px">Open Calculator</a>
+      </div>
+      <div class="card card-accent fade-up">
+        <div style="font-size:24px;margin-bottom:12px">📿</div>
+        <h3 style="font-family:var(--font-h);font-size:18px;font-weight:600;color:var(--primary);margin-bottom:8px">PSX Zakat Calculator</h3>
+        <p style="font-size:13px;color:var(--body);margin-bottom:18px">Calculate Zakat due on PSX holdings, cash, gold, and other zakatable assets.</p>
+        <a href="tools.html#zakat" class="btn btn-outline" style="font-size:13px;padding:8px 16px">Open Calculator</a>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:28px">
+      <a href="tools.html" class="btn btn-primary">All 6 Calculators</a>
+    </div>
+  </div>
+</section>
+
+<!-- Daily Brief Newsletter Feature -->
+<section class="section-sm" style="background:var(--panel);border-top:1px solid var(--rim);border-bottom:1px solid var(--rim);">
+  <div class="page-wrap">
+    <div class="grid-2" style="align-items:center;gap:48px">
+      <div>
+        <div class="section-label">Free Newsletter</div>
+        <h2 class="section-title" style="margin-bottom:16px">The Daily Market Brief</h2>
+        <p style="font-size:15px;color:var(--body);line-height:1.7;margin-bottom:20px">Every day at <strong style="color:var(--gold)">12:00 GMT</strong>, one email covering the day's major news and price moves across Forex, Crypto, Stocks, Commodities, Tadawul, and PSX. Sourced from BBC, Reuters, and other authentic publications. Never fabricated.</p>
+        <div style="display:flex;gap:24px;margin-bottom:28px;flex-wrap:wrap;font-size:14px;color:var(--body)">
+          <div><span style="color:var(--green)">✓</span> Free forever</div>
+          <div><span style="color:var(--green)">✓</span> 6 asset classes</div>
+          <div><span style="color:var(--green)">✓</span> Cited sources</div>
+        </div>
+        <a href="newsletter.html" class="btn btn-primary">Subscribe Free →</a>
+      </div>
+      <div class="card" style="background:var(--raised);border-left:3px solid var(--gold);padding:32px">
+        <div style="font-family:var(--font-m);font-size:11px;color:var(--gold);letter-spacing:1.5px;margin-bottom:12px">SAMPLE BRIEF</div>
+        <h3 style="font-family:var(--font-h);font-size:18px;font-weight:700;color:var(--primary);line-height:1.3;margin-bottom:12px">Gold Tests $2,420 as Fed Pivot Bets Build; Tadawul Closes Higher on Aramco Earnings</h3>
+        <p style="font-size:13px;color:var(--body);line-height:1.7;margin-bottom:14px">Major asset moves today: <strong style="color:var(--gold)">Gold</strong> surged on dovish Fed commentary, <strong style="color:var(--gold)">BTC</strong> reclaimed key support, and <strong style="color:var(--gold)">TASI</strong> snapped a three-day losing streak. Full breakdown across all 6 asset classes...</p>
+        <div style="font-size:11px;color:var(--body);font-family:var(--font-m)">→ READ FULL BRIEF</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Disclaimer -->
+<section class="section-sm">
+  <div class="page-wrap">
+    <div class="disclaimer fade-up">
+      <strong>Disclaimer:</strong> Content on MoneyTailors is for educational and informational purposes only. Nothing on this website constitutes financial advice. Trading and investing involve risk. Past performance is not indicative of future results. Always conduct your own research before making investment decisions.
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-grid">
+    <div>
+      <a href="index.html" class="nav-logo" style="margin-bottom:14px;display:inline-flex">
+        <img src="images/logo-icon.png" alt="MoneyTailors" class="nav-logo-img">
+        <span class="logo-text">Money<span class="gold">Tailors</span></span>
+      </a>
+      <p class="footer-brand-desc">Crafting financial prosperity. Daily market intelligence, trading tools, and investment insights across Forex, Crypto, Stocks, Tadawul, and PSX.</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Markets</div>
+      <ul class="footer-links">
+        <li><a href="markets-forex.html">Forex</a></li>
+        <li><a href="markets-crypto.html">Crypto</a></li>
+        <li><a href="markets-stocks.html">US Stocks</a></li>
+        <li><a href="markets-tadawul.html">Tadawul</a></li>
+        <li><a href="markets-psx.html">PSX</a></li>
+        <li><a href="markets-commodities.html">Commodities</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Tools</div>
+      <ul class="footer-links">
+        <li><a href="tools.html#lotsize">Lot Size (Universal)</a></li>
+        <li><a href="tools.html#forex">Forex Pip Value</a></li>
+        <li><a href="tools.html#position">Position Size</a></li>
+        <li><a href="tools.html#compound">Compound Return</a></li>
+        <li><a href="tools.html#sip">SIP Growth</a></li>
+        <li><a href="tools.html#zakat">PSX Zakat</a></li>
+        <li><a href="portfolio.html">Portfolio Tracker</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Company</div>
+      <ul class="footer-links">
+        <li><a href="insights.html">Insights</a></li>
+        <li><a href="newsletter.html">Daily Brief</a></li>
+        <li><a href="signals.html">Trading Signals</a></li>
+        <li><a href="indicators.html">Economic Data</a></li>
+        <li><a href="social.html">Social Media</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">&copy; 2025 MoneyTailors. Crafting Financial Prosperity. All rights reserved.</span>
+    <div class="footer-legal">
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Use</a>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script src="js/blog.js"></script>
+<script>loadInsights('home-posts', 3);</script>
+<script src="js/news-ticker.js"></script>
+</body>
+</html>

@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free Trading Calculators — Forex, Lot Size, Position Risk, Zakat | MoneyTailors</title>
+<meta name="description" content="Seven free professional trading calculators: Forex pip value, lot size for any asset, position size with risk management, compound returns, SIP growth, loan EMI, and PSX Zakat calculator.">
+<meta name="keywords" content="forex pip calculator, lot size calculator, position size calculator, risk reward calculator, PSX zakat calculator, SIP calculator, EMI calculator, compound interest">
+<link rel="canonical" href="https://www.moneytailors.com/tools.html">
+<link rel="icon" type="image/png" href="images/logo-icon.png">
+<meta property="og:title" content="Free Trading Calculators — MoneyTailors">
+<meta property="og:description" content="Seven free professional trading and investment calculators. No login required.">
+<meta property="og:image" content="https://www.moneytailors.com/images/logo-full.png">
+<meta property="og:url" content="https://www.moneytailors.com/tools.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"WebApplication",
+  "name":"MoneyTailors Trading Calculators",
+  "applicationCategory":"FinanceApplication",
+  "operatingSystem":"Web",
+  "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
+  "description":"Seven free trading calculators: Forex pip value, lot size, position size, compound returns, SIP, loan EMI, and PSX Zakat.",
+  "publisher":{"@type":"Organization","name":"MoneyTailors","url":"https://www.moneytailors.com"}
+}
+</script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="ticker-wrap">
+  <div class="tradingview-widget-container" style="height:46px">
+    <div class="tradingview-widget-container__widget"></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+    {
+      "symbols":[
+        {"proName":"FOREXCOM:SPXUSD","title":"S&P 500"},
+        {"proName":"FOREXCOM:NSXUSD","title":"Nasdaq 100"},
+        {"proName":"FOREXCOM:DJI","title":"Dow Jones"},
+        {"description":"Gold","proName":"OANDA:XAUUSD"},
+        {"description":"Silver","proName":"OANDA:XAGUSD"},
+        {"description":"WTI Oil","proName":"TVC:USOIL"},
+        {"description":"Brent","proName":"TVC:UKOIL"},
+        {"description":"Nat Gas","proName":"NYMEX:NG1!"},
+        {"description":"EUR/USD","proName":"FX:EURUSD"},
+        {"description":"GBP/USD","proName":"FX:GBPUSD"},
+        {"description":"USD/JPY","proName":"FX:USDJPY"},
+        {"description":"USD/SAR","proName":"FX_IDC:USDSAR"},
+        {"description":"USD/PKR","proName":"FX_IDC:USDPKR"},
+        {"description":"TASI","proName":"TADAWUL:TASI"},
+        {"description":"KSE-100","proName":"INDEX:KSE100"},
+        {"description":"Bitcoin","proName":"BITSTAMP:BTCUSD"},
+        {"description":"Ethereum","proName":"BITSTAMP:ETHUSD"},
+        {"description":"Solana","proName":"CRYPTO:SOLUSD"}
+      ],
+      "showSymbolLogo":true,
+      "colorTheme":"dark",
+      "isTransparent":true,
+      "displayMode":"regular",
+      "locale":"en"
+    }
+    </script>
+  </div>
+</div>
+
+<!-- News Ticker -->
+<div class="news-ticker-wrap">
+  <div class="news-ticker-label">NEWS</div>
+  <div id="news-ticker-inner"></div>
+</div>
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">
+      <img src="images/logo-icon.png" alt="MoneyTailors" class="nav-logo-img">
+      <span class="logo-text">Money<span class="gold">Tailors</span></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html" >Home</a></li>
+      <li class="has-dropdown">
+        <a href="markets.html" >Markets</a>
+        <div class="nav-dropdown">
+          <a href="markets.html"><span class="dd-icon">📊</span>All Markets Hub</a>
+          <a href="markets-forex.html"><span class="dd-icon">💱</span>Forex</a>
+          <a href="markets-crypto.html"><span class="dd-icon">₿</span>Crypto / Digital</a>
+          <a href="markets-stocks.html"><span class="dd-icon">📈</span>US Stocks</a>
+          <a href="markets-tadawul.html"><span class="dd-icon">🇸🇦</span>Tadawul</a>
+          <a href="markets-psx.html"><span class="dd-icon">🇵🇰</span>PSX / KSE-100</a>
+          <a href="markets-commodities.html"><span class="dd-icon">🥇</span>Commodities</a>
+        </div>
+      </li>
+      <li><a href="indicators.html" >Indicators</a></li>
+      <li class="has-dropdown">
+        <a href="insights.html" >Insights</a>
+        <div class="nav-dropdown">
+          <a href="insights.html"><span class="dd-icon">📰</span>All Articles</a>
+          <a href="newsletter.html"><span class="dd-icon">✉</span>Daily Brief Newsletter</a>
+        </div>
+      </li>
+      <li><a href="tools.html" class="active">Tools</a></li>
+      <li><a href="portfolio.html" >Portfolio</a></li>
+      <li><a href="social.html" >Social</a></li>
+      <li><a href="signals.html" style="color:var(--amber)" >Signals ★</a></li>
+      <li><a href="contact.html" class="nav-cta">Contact</a></li>
+    </ul>
+    <button class="nav-hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="page-hero">
+  <div class="page-wrap">
+    <div class="section-label">Free Trading Tools</div>
+    <h1 class="section-title">7 Professional Calculators</h1>
+    <p class="section-sub">Forex pip value, universal lot size, position sizing, compound returns, SIP growth, loan EMI, and PSX Zakat. No login. No ads.</p>
+  </div>
+</div>
+
+<div class="page-wrap section">
+
+  <div class="calc-tabs">
+    <button class="calc-tab active" data-calc="lotsize">★ Lot Size (Universal)</button>
+    <button class="calc-tab" data-calc="forex">Forex Pip Value</button>
+    <button class="calc-tab" data-calc="position">Position Size</button>
+    <button class="calc-tab" data-calc="compound">Compound Return</button>
+    <button class="calc-tab" data-calc="sip">SIP Growth</button>
+    <button class="calc-tab" data-calc="emi">Loan / EMI</button>
+    <button class="calc-tab" data-calc="zakat">PSX Zakat</button>
+  </div>
+
+  <!-- ============================================================
+       0. UNIVERSAL LOT SIZE CALCULATOR (active by default)
+       ============================================================ -->
+  <div class="calc-panel active" id="calc-lotsize">
+    <div class="grid-2">
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <h2 style="font-family:var(--font-h);font-size:20px;font-weight:700;color:var(--primary);margin:0">Universal Lot Size Calculator</h2>
+          <span class="tag tag-investing">NEW</span>
+        </div>
+        <p style="font-size:13px;color:var(--body);margin-bottom:24px">Works on any asset class: Forex, Stocks, Crypto, Commodities, Indices. Calculates exact position size with TP1/TP2/TP3 at 1:1, 1:2, 1:3 risk-reward.</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Asset Class</label>
+            <select class="form-select" id="ls-asset">
+              <option value="forex">Forex</option>
+              <option value="crypto">Crypto</option>
+              <option value="stocks" selected>Stocks / Equities</option>
+              <option value="commodities">Commodities</option>
+              <option value="indices">Indices / Futures</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Account Currency</label>
+            <select class="form-select" id="ls-currency">
+              <option value="USD">USD</option>
+              <option value="SAR">SAR</option>
+              <option value="PKR">PKR</option>
+              <option value="AED">AED</option>
+              <option value="EUR">EUR</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Account Equity</label>
+            <input class="form-input" type="number" id="ls-equity" value="1000" min="0" step="any">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Portfolio Risk (%)</label>
+            <input class="form-input" type="number" id="ls-risk" value="1" min="0.1" max="10" step="0.1">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Entry Price</label>
+            <input class="form-input" type="number" id="ls-entry" value="4310" step="any">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Stop Loss Price</label>
+            <input class="form-input" type="number" id="ls-stop" value="4072" step="any">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Direction</label>
+            <select class="form-select" id="ls-direction">
+              <option value="auto">Auto-detect</option>
+              <option value="long">Long (Buy)</option>
+              <option value="short">Short (Sell)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contract Size</label>
+            <input class="form-input" type="number" id="ls-contract" value="1" min="1" step="1">
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="calcLotSize()" style="width:100%">Calculate Lot Size &amp; Targets</button>
+
+        <div class="calc-result" id="ls-result" style="display:none">
+          <div class="result-label">Position Size</div>
+          <div class="result-value" id="ls-quantity">—</div>
+          <div class="result-grid">
+            <div><div class="result-item-label">Direction</div><div class="result-item-val" id="ls-direction-display">—</div></div>
+            <div><div class="result-item-label">Order Value</div><div class="result-item-val" id="ls-order-value">—</div></div>
+            <div><div class="result-item-label">Max Risk</div><div class="result-item-val text-red" id="ls-risk-amount">—</div></div>
+            <div><div class="result-item-label">Risk Distance</div><div class="result-item-val mono" id="ls-distance">—</div></div>
+          </div>
+
+          <div style="margin-top:20px;padding-top:18px;border-top:1px solid var(--rim)">
+            <div class="result-label" style="margin-bottom:10px">Take Profit Targets</div>
+            <table style="width:100%;font-family:var(--font-m);font-size:13px">
+              <tr style="border-bottom:1px solid rgba(26,37,53,0.5)">
+                <td style="padding:10px 8px;color:var(--gold);font-weight:600">TP1</td>
+                <td style="padding:10px 8px;color:var(--primary)" id="ls-tp1">—</td>
+                <td style="padding:10px 8px;color:var(--green);text-align:right" id="ls-tp1-reward">—</td>
+              </tr>
+              <tr style="border-bottom:1px solid rgba(26,37,53,0.5)">
+                <td style="padding:10px 8px;color:var(--gold);font-weight:600">TP2</td>
+                <td style="padding:10px 8px;color:var(--primary)" id="ls-tp2">—</td>
+                <td style="padding:10px 8px;color:var(--green);text-align:right" id="ls-tp2-reward">—</td>
+              </tr>
+              <tr>
+                <td style="padding:10px 8px;color:var(--gold);font-weight:600">TP3</td>
+                <td style="padding:10px 8px;color:var(--primary)" id="ls-tp3">—</td>
+                <td style="padding:10px 8px;color:var(--green);text-align:right" id="ls-tp3-reward">—</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--raised)">
+        <div class="section-label" style="margin-bottom:16px">How the formula works</div>
+        <p style="font-size:13px;color:var(--body);line-height:1.75;margin-bottom:14px">This calculator uses the universal position-sizing formula that works on every asset class:</p>
+        <div style="background:var(--panel);border:1px solid var(--rim);border-left:3px solid var(--gold);padding:14px;border-radius:6px;font-family:var(--font-m);font-size:12px;color:var(--gold);line-height:1.8;margin-bottom:16px">
+          Quantity = (Equity × Risk%) ÷ |Entry − Stop|<br>
+          TP1 = Entry ± Risk × 1 → 1:1 RR<br>
+          TP2 = Entry ± Risk × 2 → 1:2 RR<br>
+          TP3 = Entry ± Risk × 3 → 1:3 RR
+        </div>
+        <p style="font-size:13px;color:var(--body);line-height:1.75;margin-bottom:14px"><strong style="color:var(--primary)">Example:</strong> $1,000 equity, 1% risk, entry $4,310, stop $4,072 → Distance = 238, Risk = $10 → Position = 0.042 units (Order Value = $181), TP1 = $4,548 (+$10), TP2 = $4,786 (+$20), TP3 = $5,024 (+$30).</p>
+        <p style="font-size:13px;color:var(--body);line-height:1.75"><strong style="color:var(--primary)">Pro tip:</strong> Scaling out at TP1 (50%), TP2 (30%), and TP3 (20%) locks in profit while letting winners run. This is the "tiered exit" used by professional traders.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       1. FOREX PIP VALUE
+       ============================================================ -->
+  <div class="calc-panel" id="calc-forex">
+    <div class="grid-2">
+      <div class="card">
+        <h2 style="font-family:var(--font-h);font-size:20px;font-weight:700;color:var(--primary);margin-bottom:6px">Forex Pip Value Calculator</h2>
+        <p style="font-size:13px;color:var(--body);margin-bottom:24px">Calculate the exact monetary value of one pip for any pair and lot size.</p>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Currency Pair</label>
+            <select class="form-select" id="fx-pair">
+              <option value="EUR/USD">EUR/USD</option><option value="GBP/USD">GBP/USD</option><option value="AUD/USD">AUD/USD</option>
+              <option value="USD/JPY">USD/JPY</option><option value="USD/CHF">USD/CHF</option><option value="USD/CAD">USD/CAD</option>
+              <option value="USD/SAR">USD/SAR</option><option value="USD/PKR">USD/PKR</option><option value="EUR/GBP">EUR/GBP</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Lot Type</label>
+            <select class="form-select" id="fx-lot-type">
+              <option value="standard">Standard (100,000)</option><option value="mini">Mini (10,000)</option><option value="micro">Micro (1,000)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Number of Lots</label>
+            <input class="form-input" type="number" id="fx-lots" value="1" min="0.01" step="0.01">
+          </div>
+          <div class="form-group"><label class="form-label">Account Currency</label>
+            <select class="form-select" id="fx-account">
+              <option value="USD">USD</option><option value="SAR">SAR</option><option value="PKR">PKR</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="calcForex()" style="width:100%">Calculate Pip Value</button>
+        <div class="calc-result" id="fx-result" style="display:none">
+          <div class="result-label">Pip Value</div>
+          <div class="result-value" id="fx-pip-val">—</div>
+          <div class="result-grid">
+            <div><div class="result-item-label">Contract Size</div><div class="result-item-val" id="fx-lot-size">—</div></div>
+            <div><div class="result-item-label">Value / 10 Pips</div><div class="result-item-val" id="fx-total-tick">—</div></div>
+          </div>
+          <p style="font-size:11px;color:var(--body);margin-top:12px" id="fx-note"></p>
+        </div>
+      </div>
+      <div class="card" style="background:var(--raised)">
+        <div class="section-label" style="margin-bottom:16px">How it works</div>
+        <p style="font-size:13px;color:var(--body);line-height:1.75;margin-bottom:14px">A <strong style="color:var(--primary)">pip</strong> is the smallest price movement in a currency pair: <span class="mono" style="color:var(--gold)">0.0001</span> for most pairs, <span class="mono" style="color:var(--gold)">0.01</span> for JPY pairs.</p>
+        <p style="font-size:13px;color:var(--body);line-height:1.75">A standard lot (100,000 units) on EUR/USD = $10/pip. Mini lot = $1/pip. Micro lot = $0.10/pip.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. POSITION SIZE -->
+  <div class="calc-panel" id="calc-position">
+    <div class="grid-2">
+      <div class="card">
+        <h2 style="font-family:var(--font-h);font-size:20px;font-weight:700;color:var(--primary);margin-bottom:6px">Position Size / Risk Calculator</h2>
+        <p style="font-size:13px;color:var(--body);margin-bottom:24px">Forex-specific position sizing with stop-loss and 1:2 RR target.</p>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Account Balance (USD)</label><input class="form-input" type="number" id="ps-balance" placeholder="10000" min="100"></div>
+          <div class="form-group"><label class="form-label">Risk % per Trade</label><input class="form-input" type="number" id="ps-risk" value="2" min="0.1" max="10" step="0.1"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Entry Price</label><input class="form-input" type="number" id="ps-entry" placeholder="1.08500" step="0.00001"></div>
+          <div class="form-group"><label class="form-label">Stop Loss Price</label><input class="form-input" type="number" id="ps-stop" placeholder="1.08000" step="0.00001"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Currency Pair</label>
+          <select class="form-select" id="ps-pair">
+            <option value="EUR/USD">EUR/USD</option><option value="GBP/USD">GBP/USD</option><option value="AUD/USD">AUD/USD</option>
+            <option value="USD/JPY">USD/JPY</option><option value="USD/CHF">USD/CHF</option><option value="USD/CAD">USD/CAD</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="calcPosition()" style="width:100%">Calculate Position Size</button>
+        <div class="calc-result" id="ps-result" style="display:none">
+          <div class="result-label">Max Risk Amount</div>
+          <div class="result-value" id="ps-risk-amount">—</div>
+          <div class="result-grid">
+            <div><div class="result-item-label">Standard Lots</div><div class="result-item-val" id="ps-std-lots">—</div></div>
+            <div><div class="result-item-label">Mini Lots</div><div class="result-item-val" id="ps-mini-lots">—</div></div>
+            <div><div class="result-item-label">Micro Lots</div><div class="result-item-val" id="ps-micro-lots">—</div></div>
+            <div><div class="result-item-label">Pips at Risk</div><div class="result-item-val" id="ps-pips">—</div></div>
+            <div><div class="result-item-label">1:2 RR Target</div><div class="result-item-val" id="ps-target">—</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="background:var(--raised)">
+        <div class="section-label" style="margin-bottom:16px">Risk Management Rule</div>
+        <p style="font-size:13px;color:var(--body);line-height:1.75">Professional traders risk <strong style="color:var(--primary)">1–2% of account</strong> per trade. This survives 20–50 consecutive losses without a margin call. For tiered TPs across all asset classes, use the Universal Lot Size calculator above.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. COMPOUND RETURN -->
+  <div class="calc-panel" id="calc-compound">
+    <div class="grid-2">
+      <div class="card">
+        <h2 style="font-family:var(--font-h);font-size:20px;font-weight:700;color:var(--primary);margin-bottom:6px">Compound Return Calculator</h2>
+        <p style="font-size:13px;color:var(--body);margin-bottom:24px">Project portfolio growth with optional monthly contributions.</p>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Starting Capital ($)</label><input class="form-input" type="number" id="cr-principal" placeholder="10000" min="0"></div>
+          <div class="form-group"><label class="form-label">Monthly Addition ($)</label><input class="form-input" type="number" id="cr-monthly" placeholder="500" min="0"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Annual Return (%)</label><input class="form-input" type="number" id="cr-rate" placeholder="12" min="0" max="100" step="0.1"></div>
+          <div class="form-group"><label class="form-label">Period (Years)</label><input class="form-input" type="number" id="cr-years" placeholder="10" min="1" max="50"></div>
+        </div>
+        <button class="btn btn-primary" onclick="calcCompound()" style="width:100%">Calculate</button>
+        <div class="calc-result" id="cr-result" style="display:none">
+          <div class="result-label">Final Portfolio Value</div>
+          <div class="result-value" id="cr-final">—</div>
+          <div class="result-grid">
+            <div><div class="result-item-label">Total Invested</div><div class="result-item-val" id="cr-invested">—</div></div>
+            <div><div class="result-item-label">Total Gain</div><div class="result-item-val text-green" id="cr-gain">—</div></div>
+            <div><div class="result-item-label">Gain %</div><div class="result-item-val text-gold" id="cr-gain-pct">—</div></div>
+            <div><div class="result-item-label">Midpoint</div><div class="result-item-val" id="cr-midpoint">—</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="background:var(--raised)">
+        <div class="section-label" style="margin-bottom:16px">The Power of Compounding</div>
+        <p style="font-size:13px;color:var(--body);line-height:1.75">At 12% annual return, money doubles roughly every <strong style="color:var(--gold)">6 years</strong>. Monthly contributions dramatically accelerate this. The final years see the most dramatic acceleration.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. SIP -->
+  <div class="calc-panel" id="calc-sip">
+    <div class="grid-2">
+      <div class="card">
+        <h2 style="font-family:var(--font-h);font-size:20px;font-weight:700;color:var(--primary);margin-bottom:6px">SIP / Investment Growth Calculator</h2>
+        <p style="font-size:13px;color:var(--body);margin-bottom:24px">Calculate future value of a systematic monthly investment.</p>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Monthly SIP Amount</label><input class="form-input" type="number" id="sip-amount" placeholder="10000" min="100"></div>
+          <div class="form-group"><label class="form-label">Currency</label>
+            <select class="form-select" id="sip-currency">
+              <option value="PKR">PKR</option><option value="SAR">SAR</option><option value="USD">USD</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Expected Annual Return (%)</label><input class="form-input" type="number" id="sip-rate" placeholder="15" min="0" max="100" step="0.1"></div>
+          <div class="form-group"><label class="form-label">Period (Years)</label><input class="form-input" type="number" id="sip-years" placeholder="10" min="1" max="40"></div>
+        </div>
+        <button class="btn btn-primary" onclick="calcSIP()" style="width:100%">Calculate SIP Returns</button>
+        <div class="calc-result" id="sip-result" style="display:none">
+          <div class="result-label">Estimated Maturity Value</div>
+          <div class="result-value" id="sip-total">—</div>
+          <div class="result-grid">
+            <div><div class="result-item-label">Amount Invested</div><div class="result-item-val" id="sip-invested">—</div></div>
+            <div><div class="result-item-label">Estimated Returns</div><div class="result-item-val text-green" id="sip-returns">—</div></div>
+            <div><div class="result-item-label">Growth Multiplier</div><div class="result-item-val text-gold" id="sip-mult">—</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="background:var(--raised)">
+        <div class="section-label" style="margin-bottom:16px">SIP Strategy</div>
+        <p style="font-size:13px;color:var(--body);line-height:1.75">SIP removes market timing pressure by averaging your cost across volatility. Best for equity mutual funds, ETFs, and diversified portfolios over a 5+ year horizon. PSX has historically returned 15–20% annualized over decade-long periods.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. EMI -->
+  <div class="calc-panel" id="calc-emi">
+    <div class="grid-2">
+      <div class="card">
+        <h2 style="font-family:var(--font-h);font-size:20px;font-weight:700;color:var(--primary);margin-bottom:6px">Loan / EMI Calculator</h2>
+        <p style="font-size:13px;color:var(--body);margin-bottom:24px">Calculate monthly installment, total interest, and true cost of any loan.</p>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Loan Principal</label><input class="form-input" type="number" id="emi-principal" placeholder="500000" min="1000"></div>
+          <div class="form-group"><label class="form-label">Currency</label>
+            <select class="form-select" id="emi-currency">
+              <option value="PKR">PKR</option><option value="SAR">SAR</option><option value="AED">AED</option><option value="USD">USD</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Annual Interest Rate (%)</label><input class="form-input" type="number" id="emi-rate" placeholder="12" min="0" step="0.1"></div>
+          <div class="form-group"><label class="form-label">Loan Tenure</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <input class="form-input" type="number" id="emi-tenure" placeholder="5" min="1">
+              <select class="form-select" id="emi-tenure-type"><option value="years">Years</option><option value="months">Months</option></select>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="calcEMI()" style="width:100%">Calculate EMI</button>
+        <div class="calc-result" id="emi-result" style="display:none">
+          <div class="result-label">Monthly EMI</div>
+          <div class="result-value" id="emi-monthly">—</div>
+          <div class="result-grid">
+            <div><div class="result-item-label">Total Payment</div><div class="result-item-val" id="emi-total">—</div></div>
+            <div><div class="result-item-label">Total Interest</div><div class="result-item-val text-red" id="emi-interest">—</div></div>
+            <div><div class="result-item-label">Interest Burden</div><div class="result-item-val" id="emi-int-pct">—</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="background:var(--raised)">
+        <div class="section-label" style="margin-bottom:16px">Watch Total Interest</div>
+        <p style="font-size:13px;color:var(--body);line-height:1.75">On a 20-year mortgage at 12%, you can pay nearly as much in interest as you borrowed. One extra payment per year, or a shorter tenure, cuts years off the loan.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. ZAKAT -->
+  <div class="calc-panel" id="calc-zakat">
+    <div class="grid-2">
+      <div class="card">
+        <h2 style="font-family:var(--font-h);font-size:20px;font-weight:700;color:var(--primary);margin-bottom:6px">PSX Zakat Calculator</h2>
+        <p style="font-size:13px;color:var(--body);margin-bottom:24px">Calculate Zakat due on PSX holdings, cash, gold, and other zakatable assets.</p>
+        <div class="form-group"><label class="form-label">Currency</label>
+          <select class="form-select" id="z-currency"><option value="PKR">PKR</option><option value="SAR">SAR</option><option value="USD">USD</option></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">PSX Holdings Value</label><input class="form-input" type="number" id="z-psx" placeholder="0" min="0"></div>
+          <div class="form-group"><label class="form-label">Cash &amp; Bank</label><input class="form-input" type="number" id="z-cash" placeholder="0" min="0"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Gold / Silver</label><input class="form-input" type="number" id="z-gold" placeholder="0" min="0"></div>
+          <div class="form-group"><label class="form-label">Other Zakatable</label><input class="form-input" type="number" id="z-other" placeholder="0" min="0"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Liabilities / Debts</label><input class="form-input" type="number" id="z-debts" placeholder="0" min="0"></div>
+        <button class="btn btn-primary" onclick="calcZakat()" style="width:100%">Calculate Zakat</button>
+        <div class="calc-result" id="z-result" style="display:none">
+          <div class="result-label">Net Zakatable Assets</div>
+          <div class="result-value" id="z-total">—</div>
+          <div class="result-grid">
+            <div><div class="result-item-label">Nisab Threshold</div><div class="result-item-val" id="z-nisab">—</div></div>
+            <div><div class="result-item-label">Zakat Due (2.5%)</div><div class="result-item-val" id="z-due">—</div></div>
+          </div>
+          <p style="font-size:11px;color:var(--body);margin-top:12px" id="z-breakdown"></p>
+        </div>
+      </div>
+      <div class="card" style="background:var(--raised)">
+        <div class="section-label" style="margin-bottom:16px">Zakat on Stocks</div>
+        <p style="font-size:13px;color:var(--body);line-height:1.75">Zakat is due at <strong style="color:var(--gold)">2.5%</strong> on net zakatable assets held above Nisab for one lunar year. Most scholars use the market value method for stocks. This calculator uses the silver nisab (more conservative).</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer class="footer">
+  <div class="footer-grid">
+    <div>
+      <a href="index.html" class="nav-logo" style="margin-bottom:14px;display:inline-flex">
+        <img src="images/logo-icon.png" alt="MoneyTailors" class="nav-logo-img">
+        <span class="logo-text">Money<span class="gold">Tailors</span></span>
+      </a>
+      <p class="footer-brand-desc">Crafting financial prosperity. Daily market intelligence, trading tools, and investment insights across Forex, Crypto, Stocks, Tadawul, and PSX.</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Markets</div>
+      <ul class="footer-links">
+        <li><a href="markets-forex.html">Forex</a></li>
+        <li><a href="markets-crypto.html">Crypto</a></li>
+        <li><a href="markets-stocks.html">US Stocks</a></li>
+        <li><a href="markets-tadawul.html">Tadawul</a></li>
+        <li><a href="markets-psx.html">PSX</a></li>
+        <li><a href="markets-commodities.html">Commodities</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Tools</div>
+      <ul class="footer-links">
+        <li><a href="tools.html#lotsize">Lot Size (Universal)</a></li>
+        <li><a href="tools.html#forex">Forex Pip Value</a></li>
+        <li><a href="tools.html#position">Position Size</a></li>
+        <li><a href="tools.html#compound">Compound Return</a></li>
+        <li><a href="tools.html#sip">SIP Growth</a></li>
+        <li><a href="tools.html#zakat">PSX Zakat</a></li>
+        <li><a href="portfolio.html">Portfolio Tracker</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Company</div>
+      <ul class="footer-links">
+        <li><a href="insights.html">Insights</a></li>
+        <li><a href="newsletter.html">Daily Brief</a></li>
+        <li><a href="signals.html">Trading Signals</a></li>
+        <li><a href="indicators.html">Economic Data</a></li>
+        <li><a href="social.html">Social Media</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">&copy; 2025 MoneyTailors. Crafting Financial Prosperity. All rights reserved.</span>
+    <div class="footer-legal">
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Use</a>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script src="js/news-ticker.js"></script>
+<script src="js/calculators.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const hash = window.location.hash.replace('#','');
+  const map = { lotsize:'lotsize', forex:'forex', position:'position', compound:'compound', sip:'sip', emi:'emi', zakat:'zakat' };
+  if (hash && map[hash]) {
+    document.querySelectorAll('.calc-tab').forEach(t => { t.classList.remove('active'); if(t.dataset.calc === map[hash]) t.classList.add('active'); });
+    document.querySelectorAll('.calc-panel').forEach(p => { p.classList.remove('active'); if(p.id === 'calc-' + map[hash]) p.classList.add('active'); });
+  }
+});
+</script>
+</body>
+</html>

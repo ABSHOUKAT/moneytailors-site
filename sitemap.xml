@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://www.moneytailors.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://www.moneytailors.com/markets.html</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.moneytailors.com/markets-forex.html</loc><changefreq>daily</changefreq><priority>0.85</priority></url>
+  <url><loc>https://www.moneytailors.com/markets-crypto.html</loc><changefreq>daily</changefreq><priority>0.85</priority></url>
+  <url><loc>https://www.moneytailors.com/markets-stocks.html</loc><changefreq>daily</changefreq><priority>0.85</priority></url>
+  <url><loc>https://www.moneytailors.com/markets-tadawul.html</loc><changefreq>daily</changefreq><priority>0.85</priority></url>
+  <url><loc>https://www.moneytailors.com/markets-psx.html</loc><changefreq>daily</changefreq><priority>0.85</priority></url>
+  <url><loc>https://www.moneytailors.com/markets-commodities.html</loc><changefreq>daily</changefreq><priority>0.85</priority></url>
+  <url><loc>https://www.moneytailors.com/indicators.html</loc><changefreq>weekly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://www.moneytailors.com/insights.html</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.moneytailors.com/newsletter.html</loc><changefreq>monthly</changefreq><priority>0.85</priority></url>
+  <url><loc>https://www.moneytailors.com/tools.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.moneytailors.com/portfolio.html</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.moneytailors.com/signals.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.moneytailors.com/social.html</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.moneytailors.com/about.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.moneytailors.com/contact.html</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://www.moneytailors.com/privacy.html</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://www.moneytailors.com/terms.html</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+</urlset>

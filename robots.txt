@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /content/
+Disallow: /login.html
+Disallow: /signup.html
+Disallow: /portfolio.html
+
+Sitemap: https://www.moneytailors.com/sitemap.xml
