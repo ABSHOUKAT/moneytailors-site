@@ -149,56 +149,65 @@ def generate_digest(buckets, snapshot):
 
     today_str = datetime.now(timezone.utc).strftime('%A, %d %B %Y')
 
-    prompt = f"""You are the editor of MoneyTailors Daily Market Brief — a finance newsletter covering Forex, Crypto, Stocks, Commodities, GCC/Tadawul, and PSX.
+    # If we have very few bucketed headlines, pass ALL headlines as general market news
+    total_bucketed = sum(len(v) for v in buckets.values())
+
+    if total_bucketed < 3:
+        general_block = '\n## GENERAL MARKET & FINANCIAL NEWS (write sections based on topics covered):\n'
+        try:
+            params = {'language': 'en', 'filter_entities': 'true', 'limit': '30', 'api_token': MARKETAUX_KEY}
+            resp = requests.get('https://api.marketaux.com/v1/news/all', params=params, timeout=15)
+            if resp.status_code == 200:
+                for item in resp.json().get('data', [])[:20]:
+                    if item.get('title') and item.get('url'):
+                        general_block += f'  • {item["title"]} — {item["url"]}\n'
+            if len(general_block) > 100:
+                sources_block = general_block
+        except Exception:
+            pass
+
+    prompt = f"""You are the editor of MoneyTailors Daily Market Brief — a finance newsletter covering markets globally.
 
 TODAY: {today_str}
 
-You will write the daily market brief based ONLY on these verified headlines from authoritative news sources. You MUST NOT invent any facts, prices, or events not present in these sources. If you don't have a verified source for a claim, omit that claim.
+Write the daily market brief using the headlines and data provided below. Cover whatever topics are represented in the headlines. Use the crypto snapshot for exact crypto prices.
 
-VERIFIED HEADLINES BY ASSET CLASS:
+AVAILABLE NEWS HEADLINES:
 {sources_block}
 {snapshot_block}
 
-WRITING REQUIREMENTS:
+INSTRUCTIONS:
 
-1. **HOOK HEADLINE (most important)** — write ONE compelling headline that:
-   - Names 1-2 specific assets that moved most based on the headlines provided
-   - Includes a price level or % move if available in the headlines or snapshot
-   - Hints at the macro driver (Fed, OPEC, earnings, etc.)
-   - Is 60-90 characters long for SEO
-   - Examples of good hooks: "Gold Tests $2,420 as Fed Pivot Bets Build; Tadawul Closes Higher on Aramco" / "Bitcoin Reclaims $67K, Oil Slips Below $80 as OPEC+ Holds Output"
+1. HOOK HEADLINE: Write one SEO headline (60-90 chars) naming specific assets/events from the headlines above. Use actual prices from the snapshot where relevant.
 
-2. **STRUCTURE** — HTML body content (NO <html>, <head>, <body> tags). Use:
-   - One opening paragraph (50-80 words) summarising the day
-   - Then 4-6 H2 sections, ONE per asset class that has verified headlines (skip any bucket with no source data)
-   - Each H2 section: 2-3 sentences, with the source cited as a hyperlink: <a href="URL" target="_blank" rel="noopener noreferrer">source name</a>
-   - One closing H2 "What to Watch" with 2-3 bullets for upcoming events ONLY IF mentioned in source headlines
-   - Total length: 600-900 words
+2. ARTICLE BODY (HTML only, no html/head/body tags):
+   - Opening paragraph: 50-80 words summarising today's market environment
+   - 3-5 H2 sections covering the topics in the headlines (crypto, stocks, commodities, forex, macro — whatever is covered)
+   - For crypto: use the exact prices from the snapshot above
+   - Each section: 2-4 sentences. Link to at least one source per section using: <a href="URL">Source Name</a>
+   - Total: 400-700 words
 
-3. **FACT DISCIPLINE** — CRITICAL:
-   - Every numerical claim (price, %, levels) must come from the provided headlines or live snapshot
-   - Do NOT invent earnings figures, central bank decisions, or geopolitical events
-   - If a section's headlines are vague, write a shorter, qualitative section rather than fabricating specifics
-   - When in doubt, omit
+3. STRICT RULES:
+   - Only use facts from the provided headlines and snapshot
+   - Do not invent prices, events, or central bank decisions not mentioned above
+   - If a topic has no headlines, skip it entirely
+   - Never use em-dash with spaces. Use commas or colons instead.
 
-4. **STYLE**:
-   - Tone: analytical, professional, calm — no hype words ("explodes", "skyrockets", "moons")
-   - Never use " — " (em-dash with spaces). Use comma or colon instead.
-   - Active voice, present tense for current state
-   - Each asset section linked to at least one source
-
-After the article body, output a JSON block in EXACTLY this format (no markdown fences):
+After the article, output this JSON block exactly:
 ---JSON---
-{{"title":"Your hook headline here","excerpt":"160-char-max one-sentence summary of the brief","category":"Market Brief","image_prompt":"15-word concise visual description for AI image — gold and navy financial dashboard style"}}
+{{"title":"hook headline here","excerpt":"one sentence summary under 160 chars","category":"Market Brief","image_prompt":"15-word image description for gold navy financial dashboard"}}
 ---END---"""
 
     response = client.messages.create(
         model='claude-haiku-4-5-20251001',
         max_tokens=3000,
-        messages=[{'role': 'user', 'content': prompt}]
+        messages=[
+            {'role': 'user', 'content': prompt},
+            {'role': 'assistant', 'content': '<h2>'}
+        ]
     )
 
-    raw = response.content[0].text.strip()
+    raw = '<h2>' + response.content[0].text.strip()
 
     # Parse
     if '---JSON---' in raw and '---END---' in raw:
