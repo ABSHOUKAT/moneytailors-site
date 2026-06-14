@@ -53,15 +53,30 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_PROJECT: ${{ secrets.CLOUDFLARE_PROJECT }}
         run: |
-          echo "Deploying updated site to Cloudflare..."
-          cat > /tmp/wrangler.toml << TOML
+          echo "Preparing clean site folder for deployment..."
+          mkdir -p /tmp/site_deploy
+
+          # Copy ONLY the site files — no git, no scripts, no config
+          for item in *.html css js images admin content robots.txt sitemap.xml; do
+            if [ -e "$item" ]; then
+              cp -r "$item" /tmp/site_deploy/
+            fi
+          done
+
+          echo "Files to deploy:"
+          ls /tmp/site_deploy/
+
+          # Create wrangler config pointing to the clean folder
+          cat > /tmp/site_deploy/wrangler.toml << TOML
           name = "${CF_PROJECT}"
           compatibility_date = "2026-06-14"
           [assets]
-          directory = "/home/runner/work/moneytailors-site/moneytailors-site"
+          directory = "./"
           TOML
-          cd /home/runner/work/moneytailors-site/moneytailors-site
-          npx --yes wrangler@latest deploy --config /tmp/wrangler.toml
+
+          echo "Deploying to Cloudflare..."
+          cd /tmp/site_deploy
+          npx --yes wrangler@latest deploy
           echo "Redeploy complete."
 
       - name: Run summary
