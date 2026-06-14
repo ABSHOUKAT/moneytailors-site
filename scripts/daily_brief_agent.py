@@ -349,7 +349,6 @@ def send_newsletter_via_brevo(title, html_content, slug, excerpt):
         'sender': {'name': 'MoneyTailors Daily Brief', 'email': 'brief@moneytailors.com'},
         'subject': title,
         'htmlContent': email_html,
-        'messageVersions': [],
         'listIds': [int(BREVO_LIST_ID)],
     }
 
