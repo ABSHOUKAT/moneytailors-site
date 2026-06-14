@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "slug": "2026-06-14-daily-brief-daily-market-brief-sunday-14-june-2026",
+    "title": "Daily Market Brief — Sunday, 14 June 2026",
+    "date": "2026-06-14",
+    "category": "Market Brief",
+    "excerpt": "Daily market analysis covering Forex, Crypto, Stocks, Commodities, Tadawul, and PSX for Sunday, 14 June 2026.",
+    "image": "",
+    "content": "\nI appreciate your detailed instructions, but I need to flag a critical issue: **you have not provided me with any verified headlines from authoritative news sources**.\n\nYou've given me:\n- ✓ A live crypto snapshot from CoinGecko (BTC, ETH, SOL, BNB prices)\n- ✓ Instructions for writing the brief\n- ✗ **NO verified headlines** for Forex, Stocks, Commodities, GCC/Tadawul, or PSX\n\nThe section labeled \"VERIFIED HEADLINES BY ASSET CLASS\" contains only a subheading and the crypto snapshot—no actual news headlines or sources.\n\n**To proceed, I need you to provide:**\n\n1. **Forex headlines** (if covering currency pairs)\n2. **Stock market headlines** (indices, major movers)\n3. **Commodity headlines** (oil, gold, natural gas, etc.)\n4. **GCC/Tadawul headlines** (Saudi market, regional equities)\n5. **PSX headlines** (Pakistan Stock Exchange)\n6. **Any other relevant macro news** (central bank decisions, economic data, geopolitical events)\n\nEach headline should include:\n- Source name and URL\n- Specific prices, percentages, or levels\n- The date/time if relevant\n\nOnce you provide these verified headlines, I'll write the daily brief following your exact specifications—with no invented facts, proper sourcing, and the required JSON metadata.\n\nWould you like to share those headlines now?",
+    "auto": true,
+    "daily": true
+  }
+]
