@@ -1,6 +1,6 @@
 /* blog.js — MoneyTailors */
 
-const POSTS_URL = '/content/posts.json';
+const POSTS_URL = 'https://raw.githubusercontent.com/ABSHOUKAT/moneytailors-site/main/content/posts.json';
 
 // ---- Insight listing page ----
 async function loadInsights(containerId, limit = 0, filterCat = '') {
