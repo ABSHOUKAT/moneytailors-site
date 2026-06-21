@@ -1,12 +1,27 @@
+# .github/workflows/daily-brief.yml
+#
+# MoneyTailors Daily Market Brief — runs every day at 07:00 UTC (7 AM GMT)
+#
+# Required secrets (Settings > Secrets > Actions):
+#   ANTHROPIC_API_KEY   — Anthropic API key
+#   BREVO_API_KEY       — Brevo SMTP API key (optional, skip if absent)
+#   BREVO_LIST_ID       — Brevo list ID for subscribers (optional)
+#
+# GITHUB_TOKEN is automatically provided by GitHub Actions.
+
 name: Daily Market Brief
 
 on:
   schedule:
-    - cron: '0 12 * * *'
+    # Daily at 07:00 UTC (10:00 Riyadh, 12:00 PKT, 03:00 New York/EDT)
+    # GMT and UTC are the same offset year-round, so 7 AM GMT = 07:00 UTC,
+    # no daylight-saving adjustment needed for this cron expression itself.
+    - cron: '0 7 * * *'
+
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Dry run (preview only, no commit, no email, no redeploy)'
+        description: 'Dry run (preview only, no commit, no email)'
         required: false
         default: 'false'
         type: choice
@@ -34,7 +49,8 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        run: pip install --quiet anthropic requests
+        run: |
+          pip install --quiet anthropic requests
 
       - name: Run daily brief agent
         env:
@@ -47,42 +63,12 @@ jobs:
           DRY_RUN:           ${{ github.event.inputs.dry_run || 'false' }}
         run: python scripts/daily_brief_agent.py
 
-      - name: Redeploy to Cloudflare
-        if: ${{ github.event.inputs.dry_run != 'true' }}
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_PROJECT: ${{ secrets.CLOUDFLARE_PROJECT }}
-        run: |
-          echo "Preparing clean site folder for deployment..."
-          mkdir -p /tmp/site_deploy
-
-          # Copy ONLY the site files — no git, no scripts, no config
-          for item in *.html css js images admin content robots.txt sitemap.xml; do
-            if [ -e "$item" ]; then
-              cp -r "$item" /tmp/site_deploy/
-            fi
-          done
-
-          echo "Files to deploy:"
-          ls /tmp/site_deploy/
-
-          # Create wrangler config pointing to the clean folder
-          cat > /tmp/site_deploy/wrangler.toml << TOML
-          name = "${CF_PROJECT}"
-          compatibility_date = "2026-06-14"
-          [assets]
-          directory = "./"
-          TOML
-
-          echo "Deploying to Cloudflare..."
-          cd /tmp/site_deploy
-          npx --yes wrangler@latest deploy
-          echo "Redeploy complete."
-
       - name: Run summary
         if: always()
         run: |
           echo "## Daily Brief Run" >> $GITHUB_STEP_SUMMARY
+          echo "- Repo: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
           echo "- Time: $(date -u)" >> $GITHUB_STEP_SUMMARY
           echo "- Trigger: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- Dry run: ${{ github.event.inputs.dry_run || 'false' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Cloudflare Pages auto-deploys on commit." >> $GITHUB_STEP_SUMMARY
