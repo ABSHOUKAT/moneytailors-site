@@ -47,44 +47,94 @@ BUCKETS = {
     'stocks':      ['stock','equity','nasdaq','S&P','NYSE','shares','apple','microsoft','tesla','nvidia','wall street','earnings'],
     'commodities': ['gold','silver','oil','crude','brent','WTI','copper','natural gas','commodity','OPEC','barrel'],
     'tadawul':     ['tadawul','saudi','TASI','aramco','SABIC','GCC','riyadh','vision 2030','UAE','dubai','abu dhabi'],
-    'psx':         ['PSX','pakistan','KSE','karachi','rupee','SBP','IMF','islamabad'],
+    'psx':         ['pakistan stock exchange','PSX:','KSE-100','KSE 100','pakistan','karachi','SBP','islamabad stock'],
     'macro':       ['fed','federal reserve','inflation','recession','GDP','interest rate','central bank','jobs','employment','CPI','PMI'],
 }
 
-# ─── Step 1: Fetch news headlines via Marketaux ─────────────────────────────
-MARKETAUX_KEY = 'HgY1A0J8SrEJEtsoneEtatoydKqQI7RR5gseJZHo'
+# ─── Step 1: Fetch news headlines ────────────────────────────────────────────
+# Source list verified working 2026-06-21 by testing each feed live through
+# the exact rss2json call this script makes. Reuters and Arabian Business
+# (the previous list) were both dead and have been removed. The `count`
+# parameter that was previously appended to every request errors out on
+# rss2json's free tier without a paid API key — every single fetch was
+# silently failing because of it. Removed below; default item count is used
+# instead (rss2json's free default, no parameter needed).
+RSS_FEEDS = [
+    # General / macro
+    ('BBC Business',              'https://feeds.bbci.co.uk/news/business/rss.xml'),
+    ('BBC World',                 'https://feeds.bbci.co.uk/news/world/rss.xml'),
+    ('Yahoo Finance',             'https://finance.yahoo.com/news/rssindex'),
+    # US markets / stocks
+    ('MarketWatch Top Stories',   'https://feeds.content.dowjones.io/public/rss/mw_topstories'),
+    ('MarketWatch Market Pulse',  'https://feeds.content.dowjones.io/public/rss/mw_marketpulse'),
+    ('CNBC Business',             'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10001147'),
+    ('CNBC Markets',              'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258'),
+    ('Seeking Alpha',             'https://seekingalpha.com/market_currents.xml'),
+    ('Insider Monkey',            'http://feeds.feedburner.com/insidermonkey'),
+    # Commodities
+    ('OilPrice.com',              'https://oilprice.com/rss/main'),
+    # GCC / Tadawul-specific
+    ('AGBI',                      'https://www.agbi.com/feed/'),
+    # Crypto/breaking-news flavored — included for breadth, but the prompt
+    # below explicitly instructs the model NOT to over-weight this source
+    # for tone, since its content style leans retail/explainer rather than
+    # analytical (e.g. "How much would $1,000 in X be worth today").
+    ('Watcher Guru',              'https://watcher.guru/feed/'),
+]
+
+# Separate: not a news feed, a forward-looking economic calendar. Used only
+# to populate the "What to Watch" / upcoming-events section, never bucketed
+# alongside headlines.
+ECONOMIC_CALENDAR_FEED = ('MyFXBook Economic Calendar', 'https://www.myfxbook.com/rss/forex-economic-calendar-events')
 
 def fetch_all_headlines():
-    """Fetch financial headlines from Marketaux API (no IP restrictions, reliable)."""
+    """Fetch all headlines from RSS feeds. Returns list of {title, link, source, pubdate}."""
     all_items = []
-    try:
-        params = {
-            'language': 'en',
-            'filter_entities': 'true',
-            'limit': '50',
-            'api_token': MARKETAUX_KEY
-        }
-        resp = requests.get('https://api.marketaux.com/v1/news/all', params=params, timeout=15)
-        if resp.status_code == 200:
+    for source, feed_url in RSS_FEEDS:
+        try:
+            api_url = f'https://api.rss2json.com/v1/api.json?rss_url={requests.utils.quote(feed_url)}'
+            resp = requests.get(api_url, timeout=15)
+            if resp.status_code != 200:
+                print(f'RSS HTTP error ({source}): {resp.status_code}')
+                continue
             data = resp.json()
-            for item in data.get('data', []):
-                if not item.get('title') or not item.get('url'):
-                    continue
-                import re as _re
-                src = _re.sub(r'\.(com|net|org|co|io).*$', '', item.get('source', 'News'), flags=_re.I)
+            if data.get('status') != 'ok':
+                print(f'RSS API error ({source}): {data.get("message", "unknown")}')
+                continue
+            for item in data.get('items', [])[:20]:
                 all_items.append({
-                    'title':   item['title'].strip(),
-                    'link':    item['url'],
-                    'source':  src or 'News',
-                    'pubdate': item.get('published_at', ''),
-                    'snippet': (item.get('description') or item.get('snippet') or '')[:300],
+                    'title':   (item.get('title') or '').strip(),
+                    'link':    item.get('link', ''),
+                    'source':  source,
+                    'pubdate': item.get('pubDate', ''),
+                    'snippet': (item.get('description') or '')[:300],
                 })
-        else:
-            print(f'Marketaux error {resp.status_code}: {resp.text[:200]}')
-    except Exception as e:
-        print(f'Marketaux fetch error: {e}')
+        except Exception as e:
+            print(f'RSS error ({source}): {e}')
     print(f'Total headlines fetched: {len(all_items)}')
     return all_items
+
+def fetch_economic_calendar():
+    """Fetch upcoming economic calendar events for the 'What to Watch' section.
+    Separate from fetch_all_headlines() since this is calendar data, not news."""
+    source, feed_url = ECONOMIC_CALENDAR_FEED
+    try:
+        api_url = f'https://api.rss2json.com/v1/api.json?rss_url={requests.utils.quote(feed_url)}'
+        resp = requests.get(api_url, timeout=15)
+        if resp.status_code != 200:
+            print(f'Calendar fetch HTTP error: {resp.status_code}')
+            return []
+        data = resp.json()
+        if data.get('status') != 'ok':
+            print(f'Calendar fetch API error: {data.get("message", "unknown")}')
+            return []
+        return [{
+            'title':   (item.get('title') or '').strip(),
+            'pubdate': item.get('pubDate', ''),
+        } for item in data.get('items', [])[:10]]
+    except Exception as e:
+        print(f'Calendar fetch error: {e}')
+        return []
 
 # ─── Step 2: Bucket headlines by asset class ─────────────────────────────────
 def bucket_headlines(headlines):
@@ -120,7 +170,7 @@ def fetch_market_snapshot():
     return snapshot
 
 # ─── Step 4: Generate digest article via Claude ─────────────────────────────
-def generate_digest(buckets, snapshot):
+def generate_digest(buckets, snapshot, calendar_events=None):
     import anthropic
     client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
 
@@ -148,66 +198,65 @@ def generate_digest(buckets, snapshot):
                 snapshot_block += '\n'
 
     today_str = datetime.now(timezone.utc).strftime('%A, %d %B %Y')
+    calendar_block = ''
+    if calendar_events:
+        calendar_block = '\nUPCOMING ECONOMIC CALENDAR EVENTS (verified, use these for "What to Watch"):\n'
+        for ev in calendar_events[:6]:
+            calendar_block += f'  • {ev["title"]} ({ev["pubdate"]})\n'
 
-    # If we have very few bucketed headlines, pass ALL headlines as general market news
-    total_bucketed = sum(len(v) for v in buckets.values())
-
-    if total_bucketed < 3:
-        general_block = '\n## GENERAL MARKET & FINANCIAL NEWS (write sections based on topics covered):\n'
-        try:
-            params = {'language': 'en', 'filter_entities': 'true', 'limit': '30', 'api_token': MARKETAUX_KEY}
-            resp = requests.get('https://api.marketaux.com/v1/news/all', params=params, timeout=15)
-            if resp.status_code == 200:
-                for item in resp.json().get('data', [])[:20]:
-                    if item.get('title') and item.get('url'):
-                        general_block += f'  • {item["title"]} — {item["url"]}\n'
-            if len(general_block) > 100:
-                sources_block = general_block
-        except Exception:
-            pass
-
-    prompt = f"""You are the editor of MoneyTailors Daily Market Brief — a finance newsletter covering markets globally.
+    prompt = f"""You are the editor of MoneyTailors Daily Market Brief, a finance newsletter covering Forex, Crypto, Stocks, Commodities, GCC/Tadawul, and PSX.
 
 TODAY: {today_str}
 
-Write the daily market brief using the headlines and data provided below. Cover whatever topics are represented in the headlines. Use the crypto snapshot for exact crypto prices.
+You will write the daily market brief based ONLY on these verified headlines from authoritative news sources. You MUST NOT invent any facts, prices, or events not present in these sources. If you don't have a verified source for a claim, omit that claim.
 
-AVAILABLE NEWS HEADLINES:
+VERIFIED HEADLINES BY ASSET CLASS:
 {sources_block}
 {snapshot_block}
+{calendar_block}
 
-INSTRUCTIONS:
+SOURCE BALANCE: the headlines above come from multiple outlets covering different asset classes. Distribute coverage across however many asset-class buckets actually have verified data today, rather than over-weighting whichever bucket happens to have the most headlines. One outlet (Watcher Guru) tends to run retail-explainer style crypto content; if you draw from it, keep the SAME analytical, professional tone as the rest of the brief, don't let its style bleed in.
 
-1. HOOK HEADLINE: Write one SEO headline (60-90 chars) naming specific assets/events from the headlines above. Use actual prices from the snapshot where relevant.
+OUTPUT FORMAT (read carefully, this controls what gets published):
 
-2. ARTICLE BODY (HTML only, no html/head/body tags):
-   - Opening paragraph: 50-80 words summarising today's market environment
-   - 3-5 H2 sections covering the topics in the headlines (crypto, stocks, commodities, forex, macro — whatever is covered)
-   - For crypto: use the exact prices from the snapshot above
-   - Each section: 2-4 sentences. Link to at least one source per section using: <a href="URL">Source Name</a>
-   - Total: 400-700 words
+Your response has exactly two parts, in this order:
 
-3. STRICT RULES:
-   - Only use facts from the provided headlines and snapshot
-   - Do not invent prices, events, or central bank decisions not mentioned above
-   - If a topic has no headlines, skip it entirely
-   - Never use em-dash with spaces. Use commas or colons instead.
+PART 1: An HTML article body. Plain HTML only, no markdown, no <html>/<head>/<body> wrapper tags, no section labels, no meta-commentary about what you're about to write. The article must START with its actual opening paragraph, not with a label like "Headline:" or "Hook Headline:" or any other caption-like prefix. Output ONLY the words a reader would actually see in the published article.
 
-After the article, output this JSON block exactly:
+The article body itself must contain:
+   - One opening paragraph (50-80 words) summarising the day. This paragraph itself doubles as your "hook" — make it specific (name 1-2 assets that moved most, include a price level or % move if available, hint at the macro driver) but write it as a normal opening paragraph, never as a labeled headline line.
+   - Then 4-6 H2 sections, ONE per asset class that has verified headlines (skip any bucket with no source data)
+   - Each H2 section: 2-3 sentences, with the source cited as a hyperlink: <a href="URL" target="_blank" rel="noopener noreferrer">source name</a>
+   - One closing H2 "What to Watch" with 2-3 bullets for upcoming events, drawn from the economic calendar data above if present, otherwise only from events explicitly mentioned in source headlines
+   - Total length: 600-900 words
+
+PART 2: A JSON block, in EXACTLY this format, with NO markdown fences around it:
 ---JSON---
-{{"title":"hook headline here","excerpt":"one sentence summary under 160 chars","category":"Market Brief","image_prompt":"15-word image description for gold navy financial dashboard"}}
----END---"""
+{{"title":"A 60-90 character SEO headline naming 1-2 specific assets and a price/% move if available, e.g. Gold Tests $2,420 as Fed Pivot Bets Build; Tadawul Closes Higher on Aramco","excerpt":"160-char-max one-sentence summary of the brief","category":"Market Brief","image_prompt":"15-word concise visual description for AI image, gold and navy financial dashboard style"}}
+---END---
+
+The "title" field in this JSON is the ONLY place the headline text belongs. Do not also write it, or any variant of it, as a line inside the article body.
+
+FACT DISCIPLINE (critical):
+   - Every numerical claim (price, %, levels) must come from the provided headlines, calendar, or live snapshot
+   - Do NOT invent earnings figures, central bank decisions, or geopolitical events
+   - If a section's headlines are vague, write a shorter, qualitative section rather than fabricating specifics
+   - When in doubt, omit
+
+STYLE:
+   - Tone: analytical, professional, calm, no hype words ("explodes", "skyrockets", "moons")
+   - Never use " — " (em-dash with spaces). Use comma or colon instead.
+   - Active voice, present tense for current state
+   - Each asset section linked to at least one source
+   - Never write internal instruction labels (like "Hook Headline", "Structure", "Part 1") as literal text anywhere in your output"""
 
     response = client.messages.create(
         model='claude-haiku-4-5-20251001',
         max_tokens=3000,
-        messages=[
-            {'role': 'user', 'content': prompt},
-            {'role': 'assistant', 'content': '<h2>'}
-        ]
+        messages=[{'role': 'user', 'content': prompt}]
     )
 
-    raw = '<h2>' + response.content[0].text.strip()
+    raw = response.content[0].text.strip()
 
     # Parse
     if '---JSON---' in raw and '---END---' in raw:
@@ -320,66 +369,63 @@ def publish_to_site(html_content, title, excerpt, category, img_bytes, slug):
 # ─── Step 7: Send via Brevo ─────────────────────────────────────────────────
 def send_newsletter_via_brevo(title, html_content, slug, excerpt):
     if not BREVO_KEY or not BREVO_LIST_ID:
-        print('Brevo not configured — skipping email send')
+        print('Brevo not configured (BREVO_API_KEY or BREVO_LIST_ID missing) — skipping email send')
         return False
     if DRY_RUN:
         print('DRY RUN — skipping Brevo send')
         return True
 
     post_url = f'{SITE_URL}/post.html?slug={slug}'
-    today_str = datetime.now(timezone.utc).strftime('%A, %d %B %Y')
 
-    email_html = f"""<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;background:#f5f5f0;font-family:Arial,sans-serif">
-<div style="max-width:640px;margin:0 auto;background:#fff">
+    # Wrap the content in a basic responsive email template
+    email_html = f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><title>{html.escape(title)}</title></head>
+<body style="margin:0;padding:0;background:#f5f5f0;font-family:Inter,Arial,sans-serif;color:#1B3A5C">
+<div style="max-width:640px;margin:0 auto;background:#ffffff">
   <div style="background:#070A0D;padding:24px;text-align:center">
-    <div style="color:#D4A85A;font-weight:700;font-size:22px">MoneyTailors Daily Brief</div>
-    <div style="color:#7A9BB5;font-size:11px;margin-top:6px">{today_str}</div>
+    <div style="color:#D4A85A;font-family:'Space Grotesk',Arial,sans-serif;font-weight:700;font-size:22px;letter-spacing:-0.3px">Money<span style="color:#E8DCC4">Tailors</span> Daily Brief</div>
+    <div style="color:#7A9BB5;font-size:11px;letter-spacing:1.5px;margin-top:6px">{datetime.now(timezone.utc).strftime('%A, %d %B %Y')}</div>
   </div>
   <div style="padding:32px 28px">
-    <h1 style="font-size:24px;color:#1B3A5C;margin:0 0 12px">{html.escape(title)}</h1>
-    <div style="font-size:15px;line-height:1.75;color:#333">{html_content}</div>
-    <div style="margin-top:32px;text-align:center">
-      <a href="{post_url}" style="background:#D4A85A;color:#070A0D;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:600;font-size:14px">Read on MoneyTailors</a>
+    <h1 style="font-family:'Space Grotesk',Arial,sans-serif;font-size:26px;font-weight:700;color:#1B3A5C;line-height:1.2;margin:0 0 14px">{html.escape(title)}</h1>
+    <p style="font-size:14px;color:#666;line-height:1.6;margin:0 0 24px">{html.escape(excerpt)}</p>
+    <div style="font-size:15px;line-height:1.75;color:#333">
+      {html_content}
+    </div>
+    <div style="margin-top:36px;padding-top:24px;border-top:1px solid #eee;text-align:center">
+      <a href="{post_url}" style="display:inline-block;background:#D4A85A;color:#070A0D;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:600;font-size:14px">Read on MoneyTailors →</a>
     </div>
   </div>
-  <div style="background:#f5f5f0;padding:16px;text-align:center;font-size:11px;color:#888">
-    <a href="{{unsubscribe}}" style="color:#888">Unsubscribe</a> · <a href="{SITE_URL}" style="color:#888">MoneyTailors.com</a>
-    <br>Not financial advice.
+  <div style="background:#f5f5f0;padding:20px;text-align:center;font-size:11px;color:#888">
+    You're receiving this because you subscribed to the MoneyTailors Daily Brief.<br>
+    <a href="{{{{ unsubscribe }}}}" style="color:#888">Unsubscribe</a> &nbsp;·&nbsp; <a href="{SITE_URL}" style="color:#888">MoneyTailors.com</a><br><br>
+    Not financial advice. Markets are risky. Please do your own research.
   </div>
 </div>
 </body></html>"""
 
-    headers = {'accept': 'application/json', 'api-key': BREVO_KEY, 'content-type': 'application/json'}
+    payload = {
+        'sender': {'name': 'MoneyTailors Daily Brief', 'email': 'brief@moneytailors.com'},
+        'subject': title,
+        'htmlContent': email_html,
+        'messageVersions': [],
+        'listIds': [int(BREVO_LIST_ID)],
+    }
 
     try:
-        # Create campaign
-        r = requests.post('https://api.brevo.com/v3/emailCampaigns', headers=headers, json={
-            'name': f'Daily Brief {today_str}',
-            'subject': title,
-            'sender': {'name': 'MoneyTailors Daily Brief', 'email': 'brief@moneytailors.com'},
-            'htmlContent': email_html,
-            'recipients': {'listIds': [int(BREVO_LIST_ID)]},
-        }, timeout=30)
-
-        if r.status_code not in (200, 201):
-            print(f'Brevo campaign create failed {r.status_code}: {r.text[:200]}')
-            return False
-
-        campaign_id = r.json().get('id')
-        print(f'Brevo campaign created: ID {campaign_id}')
-
-        # Send immediately
-        s = requests.post(f'https://api.brevo.com/v3/emailCampaigns/{campaign_id}/sendNow', headers=headers, timeout=30)
-        if s.status_code in (200, 201, 204):
-            print(f'Brevo campaign sent OK')
+        resp = requests.post(
+            'https://api.brevo.com/v3/smtp/email',
+            headers={'accept': 'application/json', 'api-key': BREVO_KEY, 'content-type': 'application/json'},
+            json=payload,
+            timeout=30
+        )
+        if resp.status_code in (200, 201):
+            print(f'Brevo send OK: {resp.json()}')
             return True
         else:
-            print(f'Brevo sendNow failed {s.status_code}: {s.text[:200]}')
-            return False
+            print(f'Brevo send failed {resp.status_code}: {resp.text[:300]}')
     except Exception as e:
         print(f'Brevo error: {e}')
-        return False
+    return False
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 def slugify(title):
@@ -422,8 +468,12 @@ def main():
     # Step 3: Market snapshot
     snapshot = fetch_market_snapshot()
 
+    # Step 3b: Economic calendar (for "What to Watch" section)
+    calendar_events = fetch_economic_calendar()
+    print(f'Calendar events fetched: {len(calendar_events)}')
+
     # Step 4: Generate digest
-    html_content, title, excerpt, category, img_hint = generate_digest(buckets, snapshot)
+    html_content, title, excerpt, category, img_hint = generate_digest(buckets, snapshot, calendar_events)
     slug = slugify(title)
 
     # Step 5: Image
