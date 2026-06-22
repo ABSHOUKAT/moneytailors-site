@@ -1,345 +1,329 @@
 #!/usr/bin/env python3
 """
-MoneyTailors Daily Market Brief Agent (v2)
-==========================================
+MoneyTailors Weekly Outlook Agent
+===================================
+This is NOT a separate automated system — it's a manually-triggered
+companion to daily_brief_agent.py, run once a week (Sundays, your choice
+of time) inside a Claude Cowork session that has file access to your
+local reports folder.
+
 Pipeline:
-  1. Fetch news headlines from BBC Business, Reuters, Arabian Business RSS
-  2. Fetch live snapshot data: CoinGecko (crypto), TradingView-comparable feeds
-  3. Group news into asset class buckets (Forex, Crypto, Stocks, Commodities, GCC/Tadawul, PSX)
-  4. Generate a "Market Today" digest with Claude Haiku — every section CITES a real source
-  5. Generate hero image via Pollinations AI (gold/navy brand style)
-  6. Commit article + image to GitHub repo → Cloudflare Pages auto-deploys
-  7. Send the same article to Brevo newsletter subscribers
+  1. Read every file (PDF, DOCX, TXT, MD) you've dropped into REPORTS_FOLDER
+     during the week
+  2. Pull that week's already-published Daily Briefs from posts.json for
+     continuity (so the weekly doesn't just repeat what daily already said)
+  3. Fetch a fresh market snapshot (reuses daily_brief_agent's function)
+  4. Generate a long-form weekly analysis via Claude — deeper, cross-
+     referenced across asset classes and geographies, with explicit
+     recommendations, NOT just a headline digest
+  5. PRINT THE FULL DRAFT FOR YOUR REVIEW — this script does NOT auto-publish.
+     You read the draft, then explicitly call publish_weekly(...) yourself
+     (or tell Cowork "publish this") to actually send/commit it.
+  6. On publish: same GitHub commit + Brevo send pipeline as the daily
+     brief, but branded "MoneyTailors Weekly Outlook" instead of
+     "Daily Brief", sent to the SAME subscriber list (per your decision —
+     one list, Sunday's edition is just branded differently)
 
-Runs daily at 12:00 UTC via GitHub Actions cron.
+Required environment variables (same ones daily_brief_agent.py uses —
+if you're running this in the same Cowork/CI context, they're already set):
+  ANTHROPIC_API_KEY, GITHUB_TOKEN, GITHUB_REPO, BREVO_API_KEY, BREVO_LIST_ID
 
-Required GitHub Actions secrets:
-  ANTHROPIC_API_KEY  — Anthropic API key
-  BREVO_API_KEY      — Brevo (Sendinblue) API key  [optional — skip email if absent]
-  BREVO_LIST_ID      — Brevo subscriber list ID    [optional]
-  GITHUB_TOKEN       — auto-provided
+Usage (inside a Cowork session):
+  python3 weekly_outlook_agent.py --reports-folder /path/to/your/reports/folder
+
+This prints the draft and STOPS. To publish after reviewing, run:
+  python3 weekly_outlook_agent.py --reports-folder /path/to/folder --publish
 """
 
-import os, json, re, base64, sys, html
-from datetime import datetime, timezone
+import os, sys, json, re, glob, argparse
+from datetime import datetime, timedelta, timezone
+
+# Load .env file BEFORE anything else. This MUST happen before importing
+# daily_brief_agent below, because that module reads os.environ.get(...)
+# at import time to set its own module-level constants (GITHUB_TOKEN,
+# BREVO_KEY, etc). If .env is loaded after that import, those constants
+# are permanently empty for the rest of the process, even though
+# os.environ itself would technically have the values. Cowork sessions run
+# on an ephemeral VM and do not persist environment variables between
+# sessions (confirmed via Anthropic's own GitHub issue tracker,
+# claude-code#39125), so a .env file you upload fresh each session is the
+# practical way to supply these credentials.
+try:
+    from dotenv import load_dotenv
+    _env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.env')
+    if os.path.exists(_env_path):
+        load_dotenv(_env_path)
+        print(f'Loaded environment from {_env_path}')
+    elif os.path.exists('.env'):
+        load_dotenv('.env')
+        print('Loaded environment from ./.env')
+    else:
+        print('No .env file found — relying on environment variables already set in this session')
+except ImportError:
+    print('python-dotenv not installed (pip install python-dotenv) — relying on environment variables already set in this session')
+
+# Reuse the proven daily-brief infrastructure directly — no reimplementation,
+# no risk of the two pipelines drifting apart over time.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import daily_brief_agent as daily
+
+import anthropic
 import requests
 
-# ─── Environment ────────────────────────────────────────────────────────────
-GITHUB_TOKEN  = os.environ.get('GITHUB_TOKEN', '')
-GITHUB_REPO   = os.environ.get('GITHUB_REPO', '')
 ANTHROPIC_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
-BREVO_KEY     = os.environ.get('BREVO_API_KEY', '')
-BREVO_LIST_ID = os.environ.get('BREVO_LIST_ID', '')
+GITHUB_REPO   = os.environ.get('GITHUB_REPO', '')
 SITE_URL      = os.environ.get('SITE_URL', 'https://www.moneytailors.com')
-DRY_RUN       = os.environ.get('DRY_RUN', '').lower() == 'true'
 
-GITHUB_API = 'https://api.github.com'
-GH_HEADERS = {
-    'Authorization': f'token {GITHUB_TOKEN}',
-    'Accept': 'application/vnd.github.v3+json',
-    'Content-Type': 'application/json',
-}
+client = anthropic.Anthropic(api_key=ANTHROPIC_KEY) if ANTHROPIC_KEY else None
 
-# ─── Asset class keyword buckets ─────────────────────────────────────────────
-BUCKETS = {
-    'forex':       ['forex','currency','dollar','euro','pound','yen','exchange rate','FX','rupee','riyal','dirham','peso','yuan'],
-    'crypto':      ['bitcoin','ethereum','crypto','blockchain','BTC','ETH','altcoin','defi','token','coinbase','binance'],
-    'stocks':      ['stock','equity','nasdaq','S&P','NYSE','shares','apple','microsoft','tesla','nvidia','wall street','earnings'],
-    'commodities': ['gold','silver','oil','crude','brent','WTI','copper','natural gas','commodity','OPEC','barrel'],
-    'tadawul':     ['tadawul','saudi','TASI','aramco','SABIC','GCC','riyadh','vision 2030','UAE','dubai','abu dhabi'],
-    'psx':         ['pakistan stock exchange','PSX:','KSE-100','KSE 100','pakistan','karachi','SBP','islamabad stock'],
-    'macro':       ['fed','federal reserve','inflation','recession','GDP','interest rate','central bank','jobs','employment','CPI','PMI'],
-}
 
-# ─── Step 1: Fetch news headlines ────────────────────────────────────────────
-# Source list verified working 2026-06-21 by testing each feed live through
-# the exact rss2json call this script makes. Reuters and Arabian Business
-# (the previous list) were both dead and have been removed. The `count`
-# parameter that was previously appended to every request errors out on
-# rss2json's free tier without a paid API key — every single fetch was
-# silently failing because of it. Removed below; default item count is used
-# instead (rss2json's free default, no parameter needed).
-RSS_FEEDS = [
-    # General / macro
-    ('BBC Business',              'https://feeds.bbci.co.uk/news/business/rss.xml'),
-    ('BBC World',                 'https://feeds.bbci.co.uk/news/world/rss.xml'),
-    ('Yahoo Finance',             'https://finance.yahoo.com/news/rssindex'),
-    # US markets / stocks
-    ('MarketWatch Top Stories',   'https://feeds.content.dowjones.io/public/rss/mw_topstories'),
-    ('MarketWatch Market Pulse',  'https://feeds.content.dowjones.io/public/rss/mw_marketpulse'),
-    ('CNBC Business',             'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10001147'),
-    ('CNBC Markets',              'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258'),
-    ('Seeking Alpha',             'https://seekingalpha.com/market_currents.xml'),
-    ('Insider Monkey',            'http://feeds.feedburner.com/insidermonkey'),
-    # Commodities
-    ('OilPrice.com',              'https://oilprice.com/rss/main'),
-    # GCC / Tadawul-specific
-    ('AGBI',                      'https://www.agbi.com/feed/'),
-    # Crypto/breaking-news flavored — included for breadth, but the prompt
-    # below explicitly instructs the model NOT to over-weight this source
-    # for tone, since its content style leans retail/explainer rather than
-    # analytical (e.g. "How much would $1,000 in X be worth today").
-    ('Watcher Guru',              'https://watcher.guru/feed/'),
-]
-
-# Separate: not a news feed, a forward-looking economic calendar. Used only
-# to populate the "What to Watch" / upcoming-events section, never bucketed
-# alongside headlines.
-ECONOMIC_CALENDAR_FEED = ('MyFXBook Economic Calendar', 'https://www.myfxbook.com/rss/forex-economic-calendar-events')
-
-def fetch_all_headlines():
-    """Fetch all headlines from RSS feeds. Returns list of {title, link, source, pubdate}."""
-    all_items = []
-    for source, feed_url in RSS_FEEDS:
-        try:
-            api_url = f'https://api.rss2json.com/v1/api.json?rss_url={requests.utils.quote(feed_url)}'
-            resp = requests.get(api_url, timeout=15)
-            if resp.status_code != 200:
-                print(f'RSS HTTP error ({source}): {resp.status_code}')
-                continue
-            data = resp.json()
-            if data.get('status') != 'ok':
-                print(f'RSS API error ({source}): {data.get("message", "unknown")}')
-                continue
-            for item in data.get('items', [])[:20]:
-                all_items.append({
-                    'title':   (item.get('title') or '').strip(),
-                    'link':    item.get('link', ''),
-                    'source':  source,
-                    'pubdate': item.get('pubDate', ''),
-                    'snippet': (item.get('description') or '')[:300],
-                })
-        except Exception as e:
-            print(f'RSS error ({source}): {e}')
-    print(f'Total headlines fetched: {len(all_items)}')
-    return all_items
-
-def fetch_economic_calendar():
-    """Fetch upcoming economic calendar events for the 'What to Watch' section.
-    Separate from fetch_all_headlines() since this is calendar data, not news."""
-    source, feed_url = ECONOMIC_CALENDAR_FEED
-    try:
-        api_url = f'https://api.rss2json.com/v1/api.json?rss_url={requests.utils.quote(feed_url)}'
-        resp = requests.get(api_url, timeout=15)
-        if resp.status_code != 200:
-            print(f'Calendar fetch HTTP error: {resp.status_code}')
-            return []
-        data = resp.json()
-        if data.get('status') != 'ok':
-            print(f'Calendar fetch API error: {data.get("message", "unknown")}')
-            return []
-        return [{
-            'title':   (item.get('title') or '').strip(),
-            'pubdate': item.get('pubDate', ''),
-        } for item in data.get('items', [])[:10]]
-    except Exception as e:
-        print(f'Calendar fetch error: {e}')
+# ─── Step 1: Read dropped-in report files ────────────────────────────────────
+def read_reports_folder(folder_path):
+    """Read every supported file in the folder. Returns list of
+    {filename, text, char_count}. Unsupported file types are skipped with
+    a warning, not silently ignored, so you know if something didn't get read."""
+    if not os.path.isdir(folder_path):
+        print(f'ERROR: reports folder not found: {folder_path}')
         return []
 
-# ─── Step 2: Bucket headlines by asset class ─────────────────────────────────
-def bucket_headlines(headlines):
-    """Group headlines by asset class bucket. Each headline can go in multiple buckets."""
-    buckets = {k: [] for k in BUCKETS}
-    for h in headlines:
-        text = (h['title'] + ' ' + h['snippet']).lower()
-        for bucket_name, keywords in BUCKETS.items():
-            if any(kw.lower() in text for kw in keywords):
-                if h not in buckets[bucket_name]:
-                    buckets[bucket_name].append(h)
-    # Limit to top 3 per bucket
-    return {k: v[:3] for k, v in buckets.items() if v}
+    supported_ext = {'.txt', '.md'}
+    pdf_ext = {'.pdf'}
+    docx_ext = {'.docx'}
 
-# ─── Step 3: Fetch live market snapshot ─────────────────────────────────────
-def fetch_market_snapshot():
-    """Fetch quick price snapshot for the brief. Crypto via CoinGecko (free)."""
-    snapshot = {}
-    try:
-        ids = 'bitcoin,ethereum,solana,binancecoin'
-        url = f'https://api.coingecko.com/api/v3/simple/price?ids={ids}&vs_currencies=usd&include_24hr_change=true'
-        resp = requests.get(url, timeout=10)
-        if resp.status_code == 200:
-            data = resp.json()
-            snapshot['crypto'] = {
-                'BTC':  data.get('bitcoin',    {}),
-                'ETH':  data.get('ethereum',   {}),
-                'SOL':  data.get('solana',     {}),
-                'BNB':  data.get('binancecoin',{}),
-            }
-    except Exception as e:
-        print(f'CoinGecko snapshot error: {e}')
-    return snapshot
+    reports = []
+    all_files = sorted(glob.glob(os.path.join(folder_path, '*')))
 
-# ─── Step 4: Generate digest article via Claude ─────────────────────────────
-def generate_digest(buckets, snapshot, calendar_events=None):
-    import anthropic
-    client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
-
-    # Build a clean source list for the prompt
-    sections_text = []
-    for bucket_name in ['forex','crypto','stocks','commodities','tadawul','psx','macro']:
-        if bucket_name not in buckets:
+    for filepath in all_files:
+        filename = os.path.basename(filepath)
+        if filename.startswith('.') or filename == 'README.txt':
             continue
-        section_lines = [f'\n## {bucket_name.upper()} HEADLINES (verified sources):']
-        for h in buckets[bucket_name]:
-            section_lines.append(f'  • [{h["source"]}] {h["title"]} — {h["link"]}')
-        sections_text.append('\n'.join(section_lines))
+        ext = os.path.splitext(filename)[1].lower()
 
-    sources_block = '\n'.join(sections_text)
+        try:
+            if ext in supported_ext:
+                with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
+                    text = f.read()
+            elif ext in pdf_ext:
+                text = _extract_pdf_text(filepath)
+            elif ext in docx_ext:
+                text = _extract_docx_text(filepath)
+            else:
+                print(f'SKIPPED (unsupported type): {filename}')
+                continue
+
+            if not text.strip():
+                print(f'WARNING: {filename} produced no extractable text, skipping')
+                continue
+
+            reports.append({
+                'filename': filename,
+                'text': text.strip(),
+                'char_count': len(text),
+            })
+            print(f'Read: {filename} ({len(text):,} chars)')
+        except Exception as e:
+            print(f'ERROR reading {filename}: {e}')
+
+    return reports
+
+
+def _extract_pdf_text(filepath):
+    """Extract text from a PDF. Requires pypdf (pip install pypdf)."""
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        print('pypdf not installed — run: pip install pypdf')
+        return ''
+    reader = PdfReader(filepath)
+    return '\n\n'.join(page.extract_text() or '' for page in reader.pages)
+
+
+def _extract_docx_text(filepath):
+    """Extract text from a DOCX. Requires python-docx (pip install python-docx)."""
+    try:
+        from docx import Document
+    except ImportError:
+        print('python-docx not installed — run: pip install python-docx')
+        return ''
+    doc = Document(filepath)
+    return '\n\n'.join(p.text for p in doc.paragraphs)
+
+
+# ─── Step 2: Pull this week's daily briefs for continuity ───────────────────
+def fetch_this_weeks_daily_briefs():
+    """Reads posts.json from the live repo and returns daily briefs published
+    in the last 7 days, so the weekly outlook can build on what daily already
+    covered rather than repeating it from scratch."""
+    posts_raw, _ = daily.gh_get('content/posts.json')
+    if not posts_raw:
+        print('No posts.json found or repo not configured — continuing without daily-brief continuity')
+        return []
+
+    try:
+        posts = json.loads(posts_raw)
+    except json.JSONDecodeError:
+        print('posts.json could not be parsed — continuing without continuity')
+        return []
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).strftime('%Y-%m-%d')
+    week_daily = [
+        p for p in posts
+        if p.get('daily') and p.get('date', '') >= cutoff
+    ]
+    print(f'Found {len(week_daily)} daily briefs from the past 7 days for continuity context')
+    return week_daily
+
+
+# ─── Step 3: Generate the weekly analysis ────────────────────────────────────
+def generate_weekly_outlook(reports, week_daily_briefs, snapshot):
+    if not client:
+        print('ERROR: ANTHROPIC_API_KEY not set')
+        return None
+
+    today_str = datetime.now(timezone.utc).strftime('%A, %d %B %Y')
+
+    reports_block = ''
+    if reports:
+        reports_block = (
+            '\nRESEARCH MATERIAL FOR THIS EDITION (internal source material only - '
+            'these are numbered for your own organization while reading, NEVER refer '
+            'to "Source 1" or any filename in your output, treat all of this as '
+            'MoneyTailors\' own research input, not material to cite):\n'
+        )
+        for i, r in enumerate(reports, 1):
+            # Cap each report's contribution to keep the prompt manageable;
+            # for very long reports this takes the first ~8000 chars, which
+            # is usually enough for the model to identify key themes without
+            # blowing the context budget across multiple reports.
+            excerpt = r['text'][:8000]
+            truncated_note = ' [TRUNCATED]' if len(r['text']) > 8000 else ''
+            reports_block += f'\n--- Internal research material {i}{truncated_note} ---\n{excerpt}\n'
+    else:
+        reports_block = '\n(No additional research material was provided this week - base the outlook on the daily brief continuity and market snapshot below only, and say so in MoneyTailors\' own voice rather than inventing claims.)\n'
+
+    continuity_block = ''
+    if week_daily_briefs:
+        continuity_block = '\nTHIS WEEK\'S DAILY BRIEFS (for continuity, do not just repeat these):\n'
+        for p in week_daily_briefs:
+            continuity_block += f'  • {p["date"]}: {p["title"]}\n'
 
     snapshot_block = ''
     if snapshot.get('crypto'):
-        snapshot_block = '\n\nLIVE CRYPTO SNAPSHOT (from CoinGecko, use these exact figures):\n'
+        snapshot_block = '\nLIVE MARKET SNAPSHOT:\n'
         for sym, d in snapshot['crypto'].items():
-            if d.get('usd'):
-                chg = d.get('usd_24h_change')
-                snapshot_block += f'  • {sym}: ${d["usd"]:,.2f}'
+            usd = d.get('usd')
+            chg = d.get('usd_24h_change')
+            if usd:
+                snapshot_block += f'  • {sym}: ${usd:,.2f}'
                 if chg is not None:
                     snapshot_block += f' ({chg:+.2f}% 24h)'
                 snapshot_block += '\n'
 
-    today_str = datetime.now(timezone.utc).strftime('%A, %d %B %Y')
-    calendar_block = ''
-    if calendar_events:
-        calendar_block = '\nUPCOMING ECONOMIC CALENDAR EVENTS (verified, use these for "What to Watch"):\n'
-        for ev in calendar_events[:6]:
-            calendar_block += f'  • {ev["title"]} ({ev["pubdate"]})\n'
-
-    prompt = f"""You are the editor of MoneyTailors Daily Market Brief, a finance newsletter covering Forex, Crypto, Stocks, Commodities, GCC/Tadawul, and PSX.
+    prompt = f"""You are the editor of MoneyTailors Weekly Outlook, the Sunday long-form edition of the MoneyTailors Daily Market Brief. This is MoneyTailors' own deep, cross-asset, cross-geography analysis with explicit recommendations, written in-house using the research material below as input, not a summary of someone else's reports.
 
 TODAY: {today_str}
 
-You will write the daily market brief based ONLY on these verified headlines from authoritative news sources. You MUST NOT invent any facts, prices, or events not present in these sources. If you don't have a verified source for a claim, omit that claim.
-
-VERIFIED HEADLINES BY ASSET CLASS:
-{sources_block}
+{reports_block}
+{continuity_block}
 {snapshot_block}
-{calendar_block}
 
-SOURCE BALANCE: the headlines above come from multiple outlets covering different asset classes. Distribute coverage across however many asset-class buckets actually have verified data today, rather than over-weighting whichever bucket happens to have the most headlines. One outlet (Watcher Guru) tends to run retail-explainer style crypto content; if you draw from it, keep the SAME analytical, professional tone as the rest of the brief, don't let its style bleed in.
+VOICE AND OWNERSHIP (critical):
+   - This is MoneyTailors' OWN house analysis, written in MoneyTailors' voice, not a summary or roundup of other people's reports
+   - Absorb the facts and figures from the source material below, then present the analysis as MoneyTailors' own view, the way an in-house research desk writes after reading its inputs, not the way a literature review cites its sources
+   - NEVER name, credit, or attribute a source report by name anywhere in the article body (no "according to [X]'s report", no "[X] notes that", no "per [X]'s data", no "the report explicitly flags"). If you need to refer to where information came from, use plain phrasing instead: "this week's data shows", "the latest figures indicate", "the picture this week is"
+   - The reader should experience this as MoneyTailors speaking with its own authority, informed by deep research, not as MoneyTailors paraphrasing someone else's research
 
-OUTPUT FORMAT (read carefully, this controls what gets published):
+FACT DISCIPLINE (critical, same standard as the daily brief, but expressed in MoneyTailors' own voice per above):
+   - Every specific claim (price, %, figure, event) must trace back to one of the source reports provided below, the daily brief continuity list, or the live snapshot, but the article text itself must never name which source it came from
+   - Do NOT invent data points, forecasts, or events not present in the source material
+   - If the provided material doesn't cover a geography or asset class well, say so in MoneyTailors' own voice rather than fabricating analysis, e.g. "Coverage on X was limited this week" rather than naming which source was thin
+   - Ground each recommendation in the actual data (a real price level, a real % move, a real named catalyst) rather than in a citation, e.g. write "with the index now testing resistance at 11,200, a confirmed close above that level on stronger volume would open the path higher" instead of "given [report]'s note on the resistance level, consider X"
 
-Your response has exactly two parts, in this order:
-
-PART 1: An HTML article body. Plain HTML only, no markdown, no <html>/<head>/<body> wrapper tags, no section labels, no meta-commentary about what you're about to write. The article must START with its actual opening paragraph, not with a label like "Headline:" or "Hook Headline:" or any other caption-like prefix. Output ONLY the words a reader would actually see in the published article.
-
-The article body itself must contain:
-   - One opening paragraph (50-80 words) summarising the day. This paragraph itself doubles as your "hook" — make it specific (name 1-2 assets that moved most, include a price level or % move if available, hint at the macro driver) but write it as a normal opening paragraph, never as a labeled headline line.
-   - Then 4-6 H2 sections, ONE per asset class that has verified headlines (skip any bucket with no source data)
-   - Each H2 section: 2-3 sentences, with the source cited as a hyperlink: <a href="URL" target="_blank" rel="noopener noreferrer">source name</a>
-   - One closing H2 "What to Watch" with 2-3 bullets for upcoming events, drawn from the economic calendar data above if present, otherwise only from events explicitly mentioned in source headlines
-   - Total length: 600-900 words
-
-PART 2: A JSON block, in EXACTLY this format, with NO markdown fences around it:
----JSON---
-{{"title":"A 60-90 character SEO headline naming 1-2 specific assets and a price/% move if available, e.g. Gold Tests $2,420 as Fed Pivot Bets Build; Tadawul Closes Higher on Aramco","excerpt":"160-char-max one-sentence summary of the brief","category":"Market Brief","image_prompt":"15-word concise visual description for AI image, gold and navy financial dashboard style"}}
----END---
-
-The "title" field in this JSON is the ONLY place the headline text belongs. Do not also write it, or any variant of it, as a line inside the article body.
-
-FACT DISCIPLINE (critical):
-   - Every numerical claim (price, %, levels) must come from the provided headlines, calendar, or live snapshot
-   - Do NOT invent earnings figures, central bank decisions, or geopolitical events
-   - If a section's headlines are vague, write a shorter, qualitative section rather than fabricating specifics
-   - When in doubt, omit
+STRUCTURE — HTML body content (NO <html>/<head>/<body> wrapper tags):
+   - Opening paragraph (80-120 words): the week's defining theme across markets, synthesized in MoneyTailors' own voice
+   - 4-8 H2 sections, organized by asset class AND/OR geography depending on what the source material actually covers this week (don't force a fixed template if the sources don't support every category)
+   - Each section: 3-5 sentences, genuinely analytical (what happened, why it matters, what it implies going forward), not just headline restating, and never naming a source report
+   - One H2 "This Week's Recommendations" with 3-5 specific, data-grounded bullets across different asset classes/geographies where the material supports a view
+   - One closing H2 "What to Watch Next Week" with upcoming catalysts drawn from the material, written in MoneyTailors' own voice
+   - Total length: 1200-1800 words (this is the long-form weekly edition, meaningfully deeper than the 600-900 word daily brief)
 
 STYLE:
-   - Tone: analytical, professional, calm, no hype words ("explodes", "skyrockets", "moons")
+   - Tone: analytical, professional, calm. This is the flagship weekly piece, write at the level of MoneyTailors' senior analyst's Sunday note, not a retail newsletter and not a summary of third-party research
    - Never use " — " (em-dash with spaces). Use comma or colon instead.
-   - Active voice, present tense for current state
-   - Each asset section linked to at least one source
-   - Never write internal instruction labels (like "Hook Headline", "Structure", "Part 1") as literal text anywhere in your output"""
+   - Active voice, present tense for current state, but comfortable making forward-looking statements when grounded in the data
+   - Never write internal instruction labels as literal text anywhere in your output (no "Opening Paragraph:", no "Recommendations:" as a literal prefix beyond the actual H2 heading itself)
+   - Never name, credit, or reference any source report by name anywhere in the output (re-stated here because this is the single most important style rule for this piece)
+
+After the article body, output a JSON block in EXACTLY this format, no markdown fences:
+---JSON---
+{{"title":"A 60-100 character headline for the week's edition, naming the dominant theme, e.g. Fed Pause Meets Gulf IPO Wave: This Week's Cross-Market Outlook","excerpt":"160-char-max one-sentence summary of the week's outlook","category":"Weekly Outlook","image_prompt":"15-word concise visual description for AI image, gold and navy financial dashboard style, weekly/strategic feel"}}
+---END---"""
 
     response = client.messages.create(
-        model='claude-haiku-4-5-20251001',
-        max_tokens=3000,
+        model='claude-sonnet-4-6',
+        max_tokens=6000,
         messages=[{'role': 'user', 'content': prompt}]
     )
 
     raw = response.content[0].text.strip()
 
-    # Parse
     if '---JSON---' in raw and '---END---' in raw:
         html_part = raw.split('---JSON---')[0].strip()
         json_str  = raw.split('---JSON---')[1].split('---END---')[0].strip()
         try:
             meta = json.loads(json_str)
         except json.JSONDecodeError:
+            print('WARNING: could not parse JSON metadata block, using fallback values')
             meta = {}
     else:
+        print('WARNING: response did not contain expected ---JSON--- delimiters')
         html_part = raw
         meta = {}
 
-    title    = meta.get('title', f'Daily Market Brief — {today_str}').strip('"\'')
-    excerpt  = meta.get('excerpt', f'Daily market analysis covering Forex, Crypto, Stocks, Commodities, Tadawul, and PSX for {today_str}.')[:200]
-    category = 'Market Brief'
-    img_hint = meta.get('image_prompt', 'gold navy financial dashboard ticker, dark professional')
+    title    = meta.get('title', f'MoneyTailors Weekly Outlook, {today_str}')
+    excerpt  = meta.get('excerpt', 'This week\'s cross-market analysis and recommendations from MoneyTailors.')
+    category = meta.get('category', 'Weekly Outlook')
+    img_hint = meta.get('image_prompt', 'financial markets dashboard, weekly strategic overview')
 
-    print(f'Brief generated: "{title}" ({len(html_part)} chars)')
     return html_part, title, excerpt, category, img_hint
 
-# ─── Step 5: Image generation ───────────────────────────────────────────────
-def generate_image(img_hint):
-    style = 'dark financial Bloomberg terminal aesthetic, gold and navy accents, professional widescreen banner, no text, no letters, no logos'
-    full_prompt = f'{img_hint}, {style}'
-    encoded = requests.utils.quote(full_prompt)
-    url = f'https://image.pollinations.ai/prompt/{encoded}?width=1200&height=630&model=flux&nologo=true&seed={abs(hash(img_hint)) % 9999}'
-    print('Generating image from Pollinations AI...')
-    try:
-        resp = requests.get(url, timeout=90)
-        if resp.status_code == 200 and 'image' in resp.headers.get('Content-Type',''):
-            print(f'Image OK: {len(resp.content)} bytes')
-            return resp.content
-    except Exception as e:
-        print(f'Image generation error: {e}')
-    return None
 
-# ─── Step 6: GitHub publish ─────────────────────────────────────────────────
-def gh_get(path):
-    url = f'{GITHUB_API}/repos/{GITHUB_REPO}/contents/{path}'
-    resp = requests.get(url, headers=GH_HEADERS)
-    if resp.status_code == 200:
-        data = resp.json()
-        content = base64.b64decode(data['content'].replace('\n','')).decode('utf-8')
-        return content, data['sha']
-    return None, None
+# ─── Step 4: Slug + publish (reuses daily's GitHub/Brevo plumbing) ──────────
+def slugify_weekly(title):
+    s = title.lower()
+    s = re.sub(r'[^a-z0-9\s-]', '', s)
+    s = re.sub(r'\s+', '-', s.strip())
+    s = re.sub(r'-+', '-', s)
+    date_prefix = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    return f'{date_prefix}-weekly-outlook-{s[:40]}'.rstrip('-')
 
-def gh_put(path, content_bytes, sha, commit_msg):
-    url = f'{GITHUB_API}/repos/{GITHUB_REPO}/contents/{path}'
-    payload = {
-        'message': commit_msg,
-        'content': base64.b64encode(content_bytes).decode('utf-8'),
-    }
-    if sha: payload['sha'] = sha
-    resp = requests.put(url, headers=GH_HEADERS, json=payload)
-    if resp.status_code not in (200, 201):
-        print(f'gh_put error {resp.status_code}: {resp.text[:300]}')
-        return False
-    return True
 
-def publish_to_site(html_content, title, excerpt, category, img_bytes, slug):
+def publish_weekly(html_content, title, excerpt, category, slug, img_hint):
+    """Publishes using the exact same GitHub commit + Brevo send functions
+    as the daily brief, but with weekly-specific flags and email branding."""
+    img_bytes = daily.generate_image(img_hint)
+
+    # Reuse publish_to_site's GitHub-commit mechanics, but we can't call it
+    # directly unmodified because it hardcodes 'daily': True. Replicate the
+    # same logic here with the correct flags instead.
     today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-
-    # Upload image
     img_path = f'images/blog/{slug}.jpg'
     img_ok = False
-    if img_bytes and not DRY_RUN:
-        img_ok = gh_put(img_path, img_bytes, None, f'image: add {slug}.jpg')
+    if img_bytes:
+        img_ok = daily.gh_put(img_path, img_bytes, None, f'image: add {slug}.jpg')
 
     img_html = (
-        f'<img src="/{img_path}" alt="{html.escape(title)}" '
+        f'<img src="/{img_path}" alt="{title}" '
         f'style="width:100%;border-radius:8px;margin-bottom:28px;display:block">'
     ) if img_ok else ''
-
     full_html = img_html + '\n' + html_content
 
-    # Append to posts.json
-    posts_raw, posts_sha = gh_get('content/posts.json')
+    posts_raw, posts_sha = daily.gh_get('content/posts.json')
     posts = json.loads(posts_raw) if posts_raw else []
 
-    existing = {p.get('slug','') for p in posts}
+    existing = {p.get('slug', '') for p in posts}
     if slug in existing:
-        print(f'Slug {slug} already exists — aborting')
+        print(f'Slug {slug} already exists — aborting publish')
         return False
 
     new_post = {
@@ -350,30 +334,32 @@ def publish_to_site(html_content, title, excerpt, category, img_bytes, slug):
         'excerpt':  excerpt,
         'image':    f'/{img_path}' if img_ok else '',
         'content':  full_html,
-        'auto':     True,
-        'daily':    True,
+        'auto':     False,   # this one had a human review step, unlike daily
+        'daily':    False,
+        'weekly':   True,
     }
-
-    if DRY_RUN:
-        print('DRY RUN — would publish:')
-        preview = new_post.copy()
-        preview['content'] = preview['content'][:240] + '...'
-        print(json.dumps(preview, indent=2))
-        return True
 
     posts.insert(0, new_post)
     posts_bytes = json.dumps(posts, indent=2, ensure_ascii=False).encode('utf-8')
-    ok = gh_put('content/posts.json', posts_bytes, posts_sha, f'brief: {title}')
-    return ok
+    ok = daily.gh_put('content/posts.json', posts_bytes, posts_sha, f'weekly outlook: {title}')
+    if not ok:
+        print('GitHub publish failed')
+        return False
+    print('Published to site successfully.')
 
-# ─── Step 7: Send via Brevo ─────────────────────────────────────────────────
+    # Email send — same Brevo mechanics, different branding
+    email_ok = send_weekly_via_brevo(title, html_content, slug, excerpt)
+    return ok and email_ok
+
+
 def fetch_brevo_list_contacts(list_id, brevo_key):
     """Fetches all contacts on a Brevo list, handling pagination (max 500
-    per page per Brevo's documented limit). Required because the smtp/email
-    transactional endpoint has no 'send to entire list' parameter - listIds
-    is not valid on this endpoint. Confirmed via Brevo's own API docs and
-    the actual error this produced in production: 'messageVersions are
-    missing'."""
+    per page per Brevo's documented limit). Returns a list of {email, name}.
+    This is required because the smtp/email transactional endpoint has no
+    'send to entire list' parameter - listIds is not a valid field on this
+    endpoint (confirmed via Brevo's own API docs and the exact error this
+    script hit: 'messageVersions are missing' when listIds was used alone).
+    The actual recipients must be fetched and passed explicitly."""
     contacts = []
     limit = 500
     offset = 0
@@ -388,13 +374,16 @@ def fetch_brevo_list_contacts(list_id, brevo_key):
         except Exception as e:
             print(f'Error fetching contacts (offset {offset}): {e}')
             break
+
         if resp.status_code != 200:
             print(f'Failed to fetch contacts (offset {offset}): {resp.status_code} {resp.text[:200]}')
             break
+
         data = resp.json()
         batch = data.get('contacts', [])
         if not batch:
             break
+
         for c in batch:
             email = c.get('email')
             if not email:
@@ -402,59 +391,62 @@ def fetch_brevo_list_contacts(list_id, brevo_key):
             attrs = c.get('attributes', {})
             name = attrs.get('FIRSTNAME') or attrs.get('LASTNAME') or ''
             contacts.append({'email': email, 'name': name})
+
         offset += limit
         if len(batch) < limit:
-            break
+            break  # last page
+
     return contacts
 
 
-def send_newsletter_via_brevo(title, html_content, slug, excerpt):
-    if not BREVO_KEY or not BREVO_LIST_ID:
-        print('Brevo not configured (BREVO_API_KEY or BREVO_LIST_ID missing) — skipping email send')
+def send_weekly_via_brevo(title, html_content, slug, excerpt):
+    if not daily.BREVO_KEY or not daily.BREVO_LIST_ID:
+        print('Brevo not configured — skipping email send')
         return False
-    if DRY_RUN:
-        print('DRY RUN — skipping Brevo send')
-        return True
 
     post_url = f'{SITE_URL}/post.html?slug={slug}'
+    today_str = datetime.now(timezone.utc).strftime('%A, %d %B %Y')
 
-    # Wrap the content in a basic responsive email template
-    # Unsubscribe tag fixed to Brevo's documented {{{unsubscribe}}} syntax
-    # (triple braces, no spaces) - the previous {{ unsubscribe }} form is
-    # confirmed via Brevo's own community support to throw a Template
-    # Render Error on this endpoint.
-    email_html = f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><title>{html.escape(title)}</title></head>
-<body style="margin:0;padding:0;background:#f5f5f0;font-family:Inter,Arial,sans-serif;color:#1B3A5C">
-<div style="max-width:640px;margin:0 auto;background:#ffffff">
-  <div style="background:#070A0D;padding:24px;text-align:center">
-    <div style="color:#D4A85A;font-family:'Space Grotesk',Arial,sans-serif;font-weight:700;font-size:22px;letter-spacing:-0.3px">Money<span style="color:#E8DCC4">Tailors</span> Daily Brief</div>
-    <div style="color:#7A9BB5;font-size:11px;letter-spacing:1.5px;margin-top:6px">{datetime.now(timezone.utc).strftime('%A, %d %B %Y')}</div>
-  </div>
-  <div style="padding:32px 28px">
-    <h1 style="font-family:'Space Grotesk',Arial,sans-serif;font-size:26px;font-weight:700;color:#1B3A5C;line-height:1.2;margin:0 0 14px">{html.escape(title)}</h1>
-    <p style="font-size:14px;color:#666;line-height:1.6;margin:0 0 24px">{html.escape(excerpt)}</p>
-    <div style="font-size:15px;line-height:1.75;color:#333">
-      {html_content}
-    </div>
-    <div style="margin-top:36px;padding-top:24px;border-top:1px solid #eee;text-align:center">
-      <a href="{post_url}" style="display:inline-block;background:#D4A85A;color:#070A0D;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:600;font-size:14px">Read on MoneyTailors →</a>
-    </div>
-  </div>
-  <div style="background:#f5f5f0;padding:20px;text-align:center;font-size:11px;color:#888">
-    You're receiving this because you subscribed to the MoneyTailors Daily Brief.<br>
-    <a href="{{{{{{unsubscribe}}}}}}" style="color:#888">Unsubscribe</a> &nbsp;·&nbsp; <a href="{SITE_URL}" style="color:#888">MoneyTailors.com</a><br><br>
-    Not financial advice. Markets are risky. Please do your own research.
-  </div>
-</div>
-</body></html>"""
+    # Plain string concatenation, not an f-string, so {{{unsubscribe}}}
+    # is written exactly as Brevo needs to see it — no escaping, no ambiguity.
+    UNSUBSCRIBE_TAG = '{{{unsubscribe}}}'
 
-    print(f'Fetching contacts from Brevo list {BREVO_LIST_ID}...')
-    contacts = fetch_brevo_list_contacts(BREVO_LIST_ID, BREVO_KEY)
+    email_html = (
+        '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + '</title></head>'
+        '<body style="margin:0;padding:0;background:#f5f5f0;font-family:Inter,Arial,sans-serif;color:#1B3A5C">'
+        '<div style="max-width:640px;margin:0 auto;background:#ffffff">'
+        '  <div style="background:#070A0D;padding:24px;text-align:center">'
+        '    <div style="color:#D4A85A;font-family:\'Space Grotesk\',Arial,sans-serif;font-weight:700;font-size:22px;letter-spacing:-0.3px">Money<span style="color:#E8DCC4">Tailors</span> Weekly Outlook</div>'
+        '    <div style="color:#7A9BB5;font-size:11px;letter-spacing:1.5px;margin-top:6px">' + today_str + '</div>'
+        '  </div>'
+        '  <div style="padding:32px 28px">'
+        '    <h1 style="font-family:\'Space Grotesk\',Arial,sans-serif;font-size:26px;font-weight:700;color:#1B3A5C;line-height:1.2;margin:0 0 14px">' + title + '</h1>'
+        '    <p style="font-size:14px;color:#666;line-height:1.6;margin:0 0 24px">' + excerpt + '</p>'
+        '    <div style="font-size:15px;line-height:1.75;color:#333">' + html_content + '</div>'
+        '    <div style="margin-top:36px;padding-top:24px;border-top:1px solid #eee;text-align:center">'
+        '      <a href="' + post_url + '" style="display:inline-block;background:#D4A85A;color:#070A0D;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:600;font-size:14px">Read on MoneyTailors &#8594;</a>'
+        '    </div>'
+        '  </div>'
+        '  <div style="background:#f5f5f0;padding:20px;text-align:center;font-size:11px;color:#888">'
+        '    You\'re receiving this because you subscribed to MoneyTailors briefs.<br>'
+        '    <a href="' + UNSUBSCRIBE_TAG + '" style="color:#888">Unsubscribe</a> &nbsp;&middot;&nbsp; <a href="' + SITE_URL + '" style="color:#888">MoneyTailors.com</a><br><br>'
+        '    Not financial advice. Markets are risky. Please do your own research.'
+        '  </div>'
+        '</div>'
+        '</body></html>'
+    )
+
+    print(f'Fetching contacts from Brevo list {daily.BREVO_LIST_ID}...')
+    contacts = fetch_brevo_list_contacts(daily.BREVO_LIST_ID, daily.BREVO_KEY)
     print(f'Found {len(contacts)} contacts on the list.')
     if not contacts:
         print('No contacts found on this list — nothing to send. Check that BREVO_LIST_ID is correct.')
         return False
 
+    # Brevo's batch-send limit is 1000 message versions per call. Each
+    # version gets its own 'to' array containing exactly one recipient,
+    # so no subscriber's email address is visible to any other recipient
+    # (unlike a single shared 'to' list, which would expose everyone).
     batch_size = 1000
     all_ok = True
     for i in range(0, len(contacts), batch_size):
@@ -463,16 +455,18 @@ def send_newsletter_via_brevo(title, html_content, slug, excerpt):
             {'to': [{'email': c['email'], 'name': c['name'] or c['email']}]}
             for c in batch
         ]
+
         payload = {
-            'sender': {'name': 'MoneyTailors Daily Brief', 'email': 'brief@moneytailors.com'},
+            'sender': {'name': 'MoneyTailors Weekly Outlook', 'email': 'brief@moneytailors.com'},
             'subject': title,
             'htmlContent': email_html,
             'messageVersions': message_versions,
         }
+
         try:
             resp = requests.post(
                 'https://api.brevo.com/v3/smtp/email',
-                headers={'accept': 'application/json', 'api-key': BREVO_KEY, 'content-type': 'application/json'},
+                headers={'accept': 'application/json', 'api-key': daily.BREVO_KEY, 'content-type': 'application/json'},
                 json=payload,
                 timeout=60
             )
@@ -486,72 +480,141 @@ def send_newsletter_via_brevo(title, html_content, slug, excerpt):
         except Exception as e:
             print(f'Brevo batch {i//batch_size + 1} error: {e}')
             all_ok = False
+
     return all_ok
 
-# ─── Helpers ─────────────────────────────────────────────────────────────────
-def slugify(title):
-    s = title.lower()
-    s = re.sub(r'[^a-z0-9\s-]', '', s)
-    s = re.sub(r'\s+', '-', s.strip())
-    s = re.sub(r'-+', '-', s)
-    date_prefix = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-    return f'{date_prefix}-daily-brief-{s[:40]}'.rstrip('-')
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
+def resend_last_email():
+    """Retrieves the most recently published weekly post from posts.json and
+    sends just the email for it, without regenerating content or touching
+    GitHub again. Use this when publish_weekly() succeeded on the site-commit
+    step but failed on the email-send step (e.g. Brevo credentials were
+    wrong at the time), so you don't end up with a duplicate article."""
+    posts_raw, _ = daily.gh_get('content/posts.json')
+    if not posts_raw:
+        print('Could not read posts.json from the repo')
+        return False
+    posts = json.loads(posts_raw)
+    weekly_posts = [p for p in posts if p.get('weekly')]
+    if not weekly_posts:
+        print('No weekly posts found in posts.json')
+        return False
+
+    # posts.json has newest first (publish_weekly does posts.insert(0, ...))
+    latest = weekly_posts[0]
+    print(f'Found most recent weekly post: "{latest["title"]}" ({latest["date"]})')
+
+    # Strip the leading <img> tag that publish_weekly prepends to "content",
+    # since the email template adds its own header, we just want the body.
+    content = latest['content']
+    content_without_img = re.sub(r'^<img[^>]*>\s*\n?', '', content, count=1)
+
+    ok = send_weekly_via_brevo(latest['title'], content_without_img, latest['slug'], latest['excerpt'])
+    return ok
+
+
 def main():
-    print('=' * 60)
-    print('MoneyTailors Daily Market Brief Agent')
-    print(f'Repo : {GITHUB_REPO}')
-    print(f'UTC  : {datetime.now(timezone.utc).isoformat()}')
-    print(f'DRY  : {DRY_RUN}')
-    print('=' * 60)
+    parser = argparse.ArgumentParser(description='MoneyTailors Weekly Outlook generator')
+    parser.add_argument('--reports-folder', help='Path to the folder with this week\'s dropped-in reports (required unless using --resend-last-email)')
+    parser.add_argument('--publish', action='store_true', help='Actually publish (commit to GitHub + send via Brevo). Without this flag, only prints the draft for review.')
+    parser.add_argument('--resend-last-email', action='store_true', help='Re-send the email for the most recently published weekly post, without regenerating or re-publishing content. Use this if the site published successfully but the email send failed.')
+    args = parser.parse_args()
 
-    if not ANTHROPIC_KEY:
-        print('ERROR: ANTHROPIC_API_KEY not set')
+    if args.resend_last_email:
+        if not GITHUB_REPO:
+            print('ERROR: GITHUB_REPO not set in .env')
+            sys.exit(1)
+        if not daily.BREVO_KEY or daily.BREVO_KEY.startswith('REPLACE_THIS'):
+            print('ERROR: BREVO_API_KEY is not set correctly in .env')
+            sys.exit(1)
+        if not daily.BREVO_LIST_ID or daily.BREVO_LIST_ID.startswith('REPLACE_THIS'):
+            print('ERROR: BREVO_LIST_ID is not set correctly in .env')
+            sys.exit(1)
+        ok = resend_last_email()
+        print('Email resend ' + ('succeeded.' if ok else 'FAILED — check logs above.'))
+        sys.exit(0 if ok else 1)
+
+    if not args.reports_folder:
+        print('ERROR: --reports-folder is required (unless using --resend-last-email)')
         sys.exit(1)
-    if not GITHUB_TOKEN:
-        print('ERROR: GITHUB_TOKEN not set')
+
+    # Friendly upfront check: catch un-filled-in .env placeholders before
+    # they reach the Anthropic/GitHub/Brevo APIs and produce a confusing
+    # stack trace. This is the single most common first-run mistake, so it
+    # gets a clear, specific message rather than a generic auth error.
+    required = {
+        'ANTHROPIC_API_KEY': ANTHROPIC_KEY,
+        'GITHUB_TOKEN':      daily.GITHUB_TOKEN,
+        'GITHUB_REPO':       GITHUB_REPO,
+    }
+    missing_or_placeholder = [
+        name for name, val in required.items()
+        if not val or val.startswith('REPLACE_THIS')
+    ]
+    if missing_or_placeholder:
+        print('=' * 70)
+        print('SETUP NOT COMPLETE')
+        print('=' * 70)
+        print('The following values in your .env file still need to be filled in')
+        print('with your real credentials (they currently say REPLACE_THIS... or')
+        print('are missing entirely):')
+        for name in missing_or_placeholder:
+            print(f'  - {name}')
+        print()
+        print('Open the .env file (one level up from this scripts/ folder),')
+        print('replace each REPLACE_THIS_... line with your real value, save,')
+        print('and run this command again.')
+        print('=' * 70)
         sys.exit(1)
 
-    # Step 1: Fetch all headlines
-    headlines = fetch_all_headlines()
-    if not headlines:
-        print('No headlines fetched — aborting')
+    if not daily.BREVO_KEY or daily.BREVO_KEY.startswith('REPLACE_THIS'):
+        print('NOTE: BREVO_API_KEY is not set or still a placeholder.')
+        print('This is OK for generating a draft, but publishing will skip')
+        print('sending the email until this is filled in.\n')
+
+    print('=== MoneyTailors Weekly Outlook ===\n')
+
+    print('Step 1: Reading reports folder...')
+    reports = read_reports_folder(args.reports_folder)
+    print(f'Total reports read: {len(reports)}\n')
+
+    print('Step 2: Pulling this week\'s daily briefs for continuity...')
+    week_daily_briefs = fetch_this_weeks_daily_briefs()
+    print()
+
+    print('Step 3: Fetching market snapshot...')
+    snapshot = daily.fetch_market_snapshot()
+    print()
+
+    print('Step 4: Generating weekly outlook...')
+    result = generate_weekly_outlook(reports, week_daily_briefs, snapshot)
+    if not result:
+        print('Generation failed')
         sys.exit(1)
+    html_content, title, excerpt, category, img_hint = result
+    slug = slugify_weekly(title)
 
-    # Step 2: Bucket
-    buckets = bucket_headlines(headlines)
-    print(f'Buckets with data: {list(buckets.keys())}')
+    print('\n' + '=' * 70)
+    print('DRAFT READY FOR REVIEW')
+    print('=' * 70)
+    print(f'Title:    {title}')
+    print(f'Excerpt:  {excerpt}')
+    print(f'Slug:     {slug}')
+    print(f'Category: {category}')
+    print(f'Image prompt: {img_hint}')
+    print('-' * 70)
+    print(html_content)
+    print('=' * 70)
 
-    if len(buckets) < 2:
-        print('Not enough asset coverage today — running anyway with what we have')
+    if args.publish:
+        print('\n--publish flag set, publishing now...')
+        ok = publish_weekly(html_content, title, excerpt, category, slug, img_hint)
+        print('Publish ' + ('succeeded.' if ok else 'FAILED — check logs above.'))
+    else:
+        print('\nThis was a DRAFT ONLY (no --publish flag). Review the content above.')
+        print('If it looks good, re-run with --publish to actually send/commit it.')
 
-    # Step 3: Market snapshot
-    snapshot = fetch_market_snapshot()
-
-    # Step 3b: Economic calendar (for "What to Watch" section)
-    calendar_events = fetch_economic_calendar()
-    print(f'Calendar events fetched: {len(calendar_events)}')
-
-    # Step 4: Generate digest
-    html_content, title, excerpt, category, img_hint = generate_digest(buckets, snapshot, calendar_events)
-    slug = slugify(title)
-
-    # Step 5: Image
-    img_bytes = generate_image(img_hint)
-
-    # Step 6: Publish to site
-    published = publish_to_site(html_content, title, excerpt, category, img_bytes, slug)
-    print(f'Site publish: {"OK" if published else "FAILED"}')
-
-    # Step 7: Newsletter
-    if published:
-        emailed = send_newsletter_via_brevo(title, html_content, slug, excerpt)
-        print(f'Newsletter send: {"OK" if emailed else "SKIPPED/FAILED"}')
-
-    print('=' * 60)
-    print(f'Run complete. Article: {title}')
-    sys.exit(0 if published else 1)
 
 if __name__ == '__main__':
     main()
