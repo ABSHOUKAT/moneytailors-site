@@ -367,6 +367,47 @@ def publish_to_site(html_content, title, excerpt, category, img_bytes, slug):
     return ok
 
 # ─── Step 7: Send via Brevo ─────────────────────────────────────────────────
+def fetch_brevo_list_contacts(list_id, brevo_key):
+    """Fetches all contacts on a Brevo list, handling pagination (max 500
+    per page per Brevo's documented limit). Required because the smtp/email
+    transactional endpoint has no 'send to entire list' parameter - listIds
+    is not valid on this endpoint. Confirmed via Brevo's own API docs and
+    the actual error this produced in production: 'messageVersions are
+    missing'."""
+    contacts = []
+    limit = 500
+    offset = 0
+    while True:
+        try:
+            resp = requests.get(
+                f'https://api.brevo.com/v3/contacts/lists/{list_id}/contacts',
+                headers={'accept': 'application/json', 'api-key': brevo_key},
+                params={'limit': limit, 'offset': offset},
+                timeout=30
+            )
+        except Exception as e:
+            print(f'Error fetching contacts (offset {offset}): {e}')
+            break
+        if resp.status_code != 200:
+            print(f'Failed to fetch contacts (offset {offset}): {resp.status_code} {resp.text[:200]}')
+            break
+        data = resp.json()
+        batch = data.get('contacts', [])
+        if not batch:
+            break
+        for c in batch:
+            email = c.get('email')
+            if not email:
+                continue
+            attrs = c.get('attributes', {})
+            name = attrs.get('FIRSTNAME') or attrs.get('LASTNAME') or ''
+            contacts.append({'email': email, 'name': name})
+        offset += limit
+        if len(batch) < limit:
+            break
+    return contacts
+
+
 def send_newsletter_via_brevo(title, html_content, slug, excerpt):
     if not BREVO_KEY or not BREVO_LIST_ID:
         print('Brevo not configured (BREVO_API_KEY or BREVO_LIST_ID missing) — skipping email send')
@@ -378,6 +419,10 @@ def send_newsletter_via_brevo(title, html_content, slug, excerpt):
     post_url = f'{SITE_URL}/post.html?slug={slug}'
 
     # Wrap the content in a basic responsive email template
+    # Unsubscribe tag fixed to Brevo's documented {{{unsubscribe}}} syntax
+    # (triple braces, no spaces) - the previous {{ unsubscribe }} form is
+    # confirmed via Brevo's own community support to throw a Template
+    # Render Error on this endpoint.
     email_html = f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><title>{html.escape(title)}</title></head>
 <body style="margin:0;padding:0;background:#f5f5f0;font-family:Inter,Arial,sans-serif;color:#1B3A5C">
 <div style="max-width:640px;margin:0 auto;background:#ffffff">
@@ -397,35 +442,51 @@ def send_newsletter_via_brevo(title, html_content, slug, excerpt):
   </div>
   <div style="background:#f5f5f0;padding:20px;text-align:center;font-size:11px;color:#888">
     You're receiving this because you subscribed to the MoneyTailors Daily Brief.<br>
-    <a href="{{{{ unsubscribe }}}}" style="color:#888">Unsubscribe</a> &nbsp;·&nbsp; <a href="{SITE_URL}" style="color:#888">MoneyTailors.com</a><br><br>
+    <a href="{{{{{{unsubscribe}}}}}}" style="color:#888">Unsubscribe</a> &nbsp;·&nbsp; <a href="{SITE_URL}" style="color:#888">MoneyTailors.com</a><br><br>
     Not financial advice. Markets are risky. Please do your own research.
   </div>
 </div>
 </body></html>"""
 
-    payload = {
-        'sender': {'name': 'MoneyTailors Daily Brief', 'email': 'brief@moneytailors.com'},
-        'subject': title,
-        'htmlContent': email_html,
-        'messageVersions': [],
-        'listIds': [int(BREVO_LIST_ID)],
-    }
+    print(f'Fetching contacts from Brevo list {BREVO_LIST_ID}...')
+    contacts = fetch_brevo_list_contacts(BREVO_LIST_ID, BREVO_KEY)
+    print(f'Found {len(contacts)} contacts on the list.')
+    if not contacts:
+        print('No contacts found on this list — nothing to send. Check that BREVO_LIST_ID is correct.')
+        return False
 
-    try:
-        resp = requests.post(
-            'https://api.brevo.com/v3/smtp/email',
-            headers={'accept': 'application/json', 'api-key': BREVO_KEY, 'content-type': 'application/json'},
-            json=payload,
-            timeout=30
-        )
-        if resp.status_code in (200, 201):
-            print(f'Brevo send OK: {resp.json()}')
-            return True
-        else:
-            print(f'Brevo send failed {resp.status_code}: {resp.text[:300]}')
-    except Exception as e:
-        print(f'Brevo error: {e}')
-    return False
+    batch_size = 1000
+    all_ok = True
+    for i in range(0, len(contacts), batch_size):
+        batch = contacts[i:i + batch_size]
+        message_versions = [
+            {'to': [{'email': c['email'], 'name': c['name'] or c['email']}]}
+            for c in batch
+        ]
+        payload = {
+            'sender': {'name': 'MoneyTailors Daily Brief', 'email': 'brief@moneytailors.com'},
+            'subject': title,
+            'htmlContent': email_html,
+            'messageVersions': message_versions,
+        }
+        try:
+            resp = requests.post(
+                'https://api.brevo.com/v3/smtp/email',
+                headers={'accept': 'application/json', 'api-key': BREVO_KEY, 'content-type': 'application/json'},
+                json=payload,
+                timeout=60
+            )
+            if resp.status_code in (200, 201):
+                result = resp.json()
+                sent_count = len(result.get('messageIds', []))
+                print(f'Brevo batch {i//batch_size + 1}: sent to {sent_count} recipients OK')
+            else:
+                print(f'Brevo batch {i//batch_size + 1} failed {resp.status_code}: {resp.text[:300]}')
+                all_ok = False
+        except Exception as e:
+            print(f'Brevo batch {i//batch_size + 1} error: {e}')
+            all_ok = False
+    return all_ok
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 def slugify(title):
